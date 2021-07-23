@@ -1,0 +1,51 @@
+Flask tutorial
+https://flask.palletsprojects.com/en/2.0.x/tutorial/index.html
+
+pip install flask
+
+pip install pytest coverage
+ WARNING: The scripts py.test.exe and pytest.exe are installed in 'C:\Users\byates\AppData\Roaming\Python\Python39\Scripts' which is not on PATH.
+  Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
+  WARNING: The scripts coverage-3.9.exe, coverage.exe and coverage3.exe are installed in 'C:\Users\byates\AppData\Roaming\Python\Python39\Scripts' which is not on PATH.
+  Consider adding this directory to PATH or, if you prefer to suppress this warning, use --no-warn-script-location.
+
+added to my path: C:\Users\byates\AppData\Roaming\Python\Python39\Scripts
+
+pip install wheel # for distribution packaging
+python setup.py bdist_wheel
+sftp dist/flaskr-1.0.0-py3-none-any.whl root@sftp:
+
+on SFTP:
+# as root
+cd ~/flasktest
+apt-get install python3-venv
+python3 -m venv venv
+. venv/bin/activate
+pip install flaskr-1.0.0-py3-none-any.whl
+export FLASK_APP=flaskr
+flask init-db
+
+python -c 'import os; print(os.urandom(16))' 
+vi venv/var/flaskr-instance/config.py
+SECRET_KEY = b'...from random...'
+
+pip install waitress
+waitress-serve --call 'flaskr:create_app'
+----
+on Domain1
+cd \users\byates\desktop
+mkdir flasktest
+cd flasktest
+py -m venv py_venv
+py_env\Scripts\activate
+pip install ..\flaskr-1.0.0-py3-none-any.whl
+set FLASK_APP=flaskr
+flask init-db
+-- still put it elsewhere:
+-- C:\Program Files\Python38\var\flaskr-instance\flaskr.sqlite
+python -c "import os; print(os.urandom(16))" >> "C:\Program Files\Python38\var\flaskr-instance\config.py"
+vi  "C:\Program Files\Python38\var\flaskr-instance\config.py"
+-- add SECRET_KEY =  to front
+pip install waitress
+waitress-serve --call "flaskr:create_app"
+
