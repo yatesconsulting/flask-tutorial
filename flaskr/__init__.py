@@ -1,13 +1,18 @@
-import os
-
 from flask import Flask
 
+import os
+
+# import sys
+# sys.path.insert(0, '/var/www/flaskr')
 
 def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
+    # app.config.from_mapping(
+    #     # SECRET_KEY='dev', via .env?
+    #     DATABASE=os.path.join(app.instance_path, 'flaskr.sqlite'),
+    # )
     app.config.from_mapping(
-        SECRET_KEY='dev',
         DATABASE=os.path.join(app.instance_path, 'flaskr.sqlite'),
     )
 
@@ -26,8 +31,25 @@ def create_app(test_config=None):
 
     # a simple page that says hello
     @app.route('/hello')
-    def hello():
-        return 'Hello, World! (from __init.py__)'
+    @app.route('/hello/<string:name>')
+    def hello(name="world"):
+        # a = os.getenv('BLAH', 'nutin honey')
+        # a={}'.format(a)
+        # application.secret_key = os.getenv('SECRET_KEY', 'for dev')
+        # import subprocess
+        # a = subprocess.run(['env'], stdout=subprocess.PIPE)
+        # a.stdout
+        return '<h1>Hello, {}!</h1>'.format(name)
+
+    @app.route('/hello2')
+    @app.route('/about')
+    def about():
+        return '<h1>About, World!</h1>'
+
+    @app.route('/onlyget', methods=['GET']) # GET POST
+    def onlyget():
+        return 'You can only GET this webpage.'
+
 
     from . import db
     db.init_app(app)
@@ -40,3 +62,6 @@ def create_app(test_config=None):
     app.add_url_rule('/', endpoint='index')
 
     return app
+
+if __name__ == "__main__":
+    app.run(debug=True)

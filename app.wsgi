@@ -9,8 +9,8 @@ with open(activate_this) as file_:
 
 from flaskr import create_app
 application = create_app()
+
 # application.secret_key = os.getenv('SECRET_KEY', 'for dev')
-# application.config.from_object('flaskr.default_settings')
-application.secret_key = os.getenv('SECRET_KEY', 'for dev')
-# application.config.from_object('.env')
-application.config.from_pyfile('.env')
+# retrieved from Apache environment, set via /etc/apache2/envvars
+
+application.secret_key = 'for dev'

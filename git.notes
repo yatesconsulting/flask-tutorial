@@ -1,2 +1,16 @@
 git commit -m "If applied, this commit will ___"
+-- once: git config --add --local core.sshCommand 'ssh -i ~/.ssh/id_rsa' -- local repository only
+git config -l
+
+~/.ssh/config
+Host github.com
+  Hostname ssh.github.com
+  Port 443
+  User git
+
+real answer:
+git remote -v 
+git remote remove origin 
+git remote add origin git@github.com:user/repo.git  
+
 git push
