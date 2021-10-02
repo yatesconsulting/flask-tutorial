@@ -33,13 +33,14 @@ def create_app(test_config=None):
     @app.route('/hello')
     @app.route('/hello/<string:name>')
     def hello(name="world"):
-        # a = os.getenv('BLAH', 'nutin honey')
+        a = os.getenv('BLAH', 'nutin honey')
         # a={}'.format(a)
         # application.secret_key = os.getenv('SECRET_KEY', 'for dev')
         # import subprocess
         # a = subprocess.run(['env'], stdout=subprocess.PIPE)
         # a.stdout
-        return '<h1>Hello, {}!</h1>'.format(name)
+        return '<h1>Hello there, {}!</h1> from flaskr/__init__.py'.format(name)
+        # return '<h1>Hello there, {}!</h1>'.format(app.secret_key)
 
     @app.route('/hello2')
     @app.route('/about')
@@ -59,7 +60,13 @@ def create_app(test_config=None):
 
     from . import blog
     app.register_blueprint(blog.bp)
-    app.add_url_rule('/', endpoint='index')
+
+    from . import inventory
+    app.register_blueprint(inventory.bp)
+
+    from . import home
+    app.register_blueprint(home.bp)
+    app.add_url_rule('/', endpoint='index') # needed?
 
     return app
 
