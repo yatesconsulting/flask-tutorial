@@ -6,12 +6,32 @@ from werkzeug.exceptions import abort
 from flaskr.auth import login_required
 from flaskr.db import get_db
 
+from . import mssql_db
+
 bp = Blueprint('inventory', __name__, url_prefix='/inv')
 
 @bp.route('/')
 def index():
-    """Show all the posts, most recent first."""
+    """Show the menu"""
     return render_template('inventory/index.html')
+
+@bp.route('/test')
+# @login_required
+def test():
+    db = mssql_db.MSSQL_DB_Conn()
+    # ok til here, but next line crashes it
+    a = db.test_results()
+    # b = a.__dict__
+    # db.spid
+    # c = json.dumps(a)
+
+    # a = ['blue','red']
+    sql = "select top 1 description from web..vw_web_FA_base"
+
+    sql = "select top 1 name,type from web.sys.tables"
+    r = db.execute_s(sql)
+    return '<code>..{}</code>'.format(a)
+    # return render_template('inventory/index.html', rows=a)
 
 @bp.route('/create', methods=('GET', 'POST'))
 @login_required
@@ -28,6 +48,7 @@ def create():
             flash(error)
         else:
             db = get_db()
+            # test_results
             db.execute(
                 'INSERT INTO post (title, body, author_id)'
                 ' VALUES (?, ?, ?)',
