@@ -3,3 +3,7 @@
 # apt-get install python3-venv
 # python -m venv venv
 # . venv/bin/activate
+
+# windows
+# python -m venv venv
+# venv\Scripts\activate.bat

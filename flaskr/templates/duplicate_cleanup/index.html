@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h2><a href="{{ url_for('.index') }}">{% block title %}Duplicate Cleanup{% endblock %}</a></h2>
+{% endblock %}
+
+{% block content %}
+
+
+{% if g.user %}
+
+
+{% for row in rows %}
+  <p>{{ row }}</p>
+{% endfor %}
+Total lines (maybe 1 more):  {{rows|length}}
+
+
+{% endif %}
+
+
+
+{% endblock %}

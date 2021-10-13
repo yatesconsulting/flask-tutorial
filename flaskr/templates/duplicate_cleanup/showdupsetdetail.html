@@ -1,0 +1,23 @@
+{% extends 'duplicate_cleanup/index.html' %}
+
+{% block content %}
+
+<p align="right">
+  <a href="">show trumped {{row.table }} rows</a> &middot;
+  <a href="">show all {{ row.table}} rows</a>
+</p>
+{% for row in rows %}
+  {% if loop.changed(row.table) %}
+  <hr />
+  <p align="right">
+  <a href="">show trumped {{row.table }} rows</a>
+  <a href="">show all {{ row.table}} rows</a>
+  </p>
+  <h2>{{ row.table }}</h2>
+  {% endif %}
+  
+  <p>{{ row.id_num }} {{ row.LastFirst }}</p>
+
+{% endfor %}
+
+{% endblock %}
