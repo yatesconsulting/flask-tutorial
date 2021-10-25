@@ -40,6 +40,7 @@ py -m venv py_venv
 py_env\Scripts\activate
 pip install ..\flaskr-1.0.0-py3-none-any.whl
 set FLASK_APP=flaskr
+set FLASK_DEBUG=1 rem reloads on any file changes
 flask init-db
 -- still put it elsewhere:
 -- C:\Program Files\Python38\var\flaskr-instance\flaskr.sqlite

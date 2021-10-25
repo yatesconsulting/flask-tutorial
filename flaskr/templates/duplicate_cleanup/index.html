@@ -7,16 +7,24 @@
 {% block content %}
 
 
-{% if g.user %}
+
 
 
 {% for row in rows %}
   <p>{{ row }}</p>
 {% endfor %}
+
+{% if links %}
+<ul>
+{% for link in links %}
+<li><a class="action" href="{{ url_for(".{}".format(link|lower)) }}">{{ link }}</a></li>
+{% endfor %}
+</ul>
+{% endif %}
+
 Total lines (maybe 1 more):  {{rows|length}}
 
 
-{% endif %}
 
 
 

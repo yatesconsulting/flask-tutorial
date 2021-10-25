@@ -2,16 +2,18 @@
 
 {% block content %}
 
+{# block title Duplicate Cleanup, list all dupsets endblock #}
+
 {% for row in rows %}
   {% if loop.changed(row.dupset) %}
   <hr />
-  <button>process dupset {{ row.dupset }}</button>
-  
+    <a href="{{ url_for('.showdupset', dupset = row.dupset) }}">Dupset {{ row.dupset }} Details</a>
+  &middot;
     {% if row.human_verified %}
     Human Verified &middot;
     {% endif %}
 
-    {% if row.goodid %} -->
+    {% if row.goodid %}
     GoodID: {{ row.goodid }} &middot;
     {#  
     <!-- {% elif row.goodid == 0 %}

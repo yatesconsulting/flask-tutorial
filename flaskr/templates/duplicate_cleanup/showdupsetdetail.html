@@ -1,23 +1,110 @@
 {% extends 'duplicate_cleanup/index.html' %}
 
+{% block title %}Dupset {{ headerinfo.dupset }} Cleanup{% endblock %}
+
 {% block content %}
 
-<p align="right">
-  <a href="">show trumped {{row.table }} rows</a> &middot;
-  <a href="">show all {{ row.table}} rows</a>
-</p>
+<script>
+function toggleClass(el) {
+  var x = document.getElementsByClassName(el);
+  var style = getComputedStyle(x[0]);
+  var s = style.display
+  // toggle the entire class the same way, even if individual elements somehow got out of sync
+  var i;
+  for (i = 0; i < x.length; i++) {
+    if (s == "none") {
+      x[i].style.display = "block"; // none of these work great
+      x[i].style.display = "inline-block"; 
+      x[i].style.display = "inline"; 
+    } else {
+      x[i].style.display = "none";
+    }
+  } 
+}
+
+function displayClass(cl) {
+  let els = [];    
+  if (cl == "all"){
+    // make el into els list and loop over the list every time
+    els =  ["same", "auto", "ignore"];
+  } else {
+    // put the one value of el into the list
+    els = [cl];
+  }
+
+  for (const el of els){
+    var x = document.getElementsByClassName(el);
+    // var style = getComputedStyle(x[0]);
+    // var s = style.display
+    // toggle the entire class the same way, even if individual elements somehow got out of sync
+    var i;
+    for (i = 0; i < x.length; i++) {
+      // if (s == "none") {
+        x[i].style.display = "inline"; 
+      // }
+    } 
+  }
+}
+</script>
+
+<style>
+
+  select { min-width: 100px; }
+  select option { font-size: 16pt; }
+  .same { display: none; background-color: greenyellow;}
+  .ignore { display: none; background-color: lightsalmon; }
+  .auto { display: none; background-color: lightskyblue; }
+</style>
+
+<table border="0" cellpadding="0" cellspacing="0" width="100%">
+  <tr><td>
+    <h2>goodid: {{ headerinfo.goodid }} with ids {{ headerinfo.ids }}</h2>
+  </td>
+<td style="text-align:right;">
+    <a href="#" onclick='toggleClass("same")'>Toggle fields  with all the Same values</a><br />
+    <!-- we will not be adding class "disabledsame" as they should just never be turned off -->
+    <!-- not be adding class "needinput" yet, until  they update when complted -->
+
+    <a href="#" onclick='toggleClass("auto")'>Toggle autofilled fields</a><br />
+    <a href="#" onclick='toggleClass("ignore")'>Toggle ignorable fields</a><br />
+    <a href="#" onclick='displayClass("all")'>Show all fields</a>
+</td>
+</tr>
+</table>
+
+<form>  
 {% for row in rows %}
-  {% if loop.changed(row.table) %}
-  <hr />
-  <p align="right">
-  <a href="">show trumped {{row.table }} rows</a>
-  <a href="">show all {{ row.table}} rows</a>
-  </p>
-  <h2>{{ row.table }}</h2>
+<!-- maybe use https://css-tricks.com/how-to-section-your-html here for headers to stick better -->
+{% if loop.changed(row.table) %}
+  <hr style="height:30px; color:red;" />
+  <table border="0" cellpadding="0" cellspacing="0" width="100%">
+    <tr>
+      <td>
+        <h2>--- <a name="{{ row.table }}">{{ row.table }}</a> ---</h2>
+      </td>
+      <td style="text-align:right;">
+        <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}same")'>Toggle {{ row.table }} fields  with all the Same values</a><br />
+          <!-- we will not be adding class "disabled*same" as they should just never be turned off -->
+          <!--  not be adding class "*needinput" yet, until  they update when complted -->
+          <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}auto")'>Toggle {{ row.table }}  autofilled fields</a><br />
+        <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}ignore")'>Toggle  {{ row.table }} ignorable fields</a><br />
+        <a href="#{{ row.table }}" onclick='displayClass("all")'>Show all {{ row.table }} fields</a>
+      </td>
+    </tr>
+  </table>
   {% endif %}
   
-  <p>{{ row.id_num }} {{ row.LastFirst }}</p>
+  <div class="{{ row.disabled }}{{ row.class }} {{ row.disabled }}{{ row.table}}{{ row.class }}" style="margin:10px;">
+  {{ row.field }} <br />
+  <select name="{{ row.table }}.{{ row.field }}" size="{{ headerinfo.ids|length }}" required  {{ row.disabled }}>
 
+  {% for option in row.options %}
+  <option  value="{{option.formval}}" {{ option.selected }} {{ option.disabled }}>{{ option.showval }}</option>
+  {% endfor %}
+  </select>
+</div>
+  
 {% endfor %}
-
+  <input type="submit" value="Submit">
+</form>
 {% endblock %}
