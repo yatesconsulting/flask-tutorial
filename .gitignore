@@ -119,3 +119,4 @@ dmypy.json
 *.swp
 *Unused*
 secrets.py
+myflasksecrets.py

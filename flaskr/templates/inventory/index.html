@@ -8,18 +8,17 @@
 Things anyone can do:
 <ul>
   <li>lookup an item</li>
-</ul>
+</ul >
 
 {% if g.user %}
 Things you can do if you're logged in:
 <ul>
-  <li>Start or continue a Deletion form</li>
+  <li>/del Start or continue a Deletion form</li>
 </ul>
 
 <h2>Stuff</h2>
 {% for row in rows %}
-.
-  <p>{{ row.keys }}</p>
+  <p>{{ row }}</p>
 {% endfor %}
 
 {% endif %}

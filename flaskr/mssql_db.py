@@ -4,8 +4,10 @@ import threading
 import time
 import queue
 import traceback
-from secrets import dbserver, dbname, dbuid, dbpwd
 
+import sys
+sys.path.insert(0, '/var/www/flaskr')
+from myflasksecrets import dbserver, dbname, dbuid, dbpwd
 
 # http://www.pymssql.org/en/stable/ref/_mssql.html
 

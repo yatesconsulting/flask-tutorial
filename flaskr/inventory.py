@@ -15,98 +15,56 @@ def index():
     """Show the menu"""
     return render_template('inventory/index.html')
 
-@bp.route('/test')
-# @login_required
-def test():
+@bp.route('/del', methods=["GET", "POST"])
+@login_required
+def deletions():
     db = mssql_db.MSSQL_DB_Conn()
+    # sql = "select * from web..vw_web_FA_base where TagNumber = '{}'".format(57749)
+    sql = "select top 10 'blah' as blah, * from web..vw_web_FA_base"
+    r = db.execute_s(sql)
+    # r=['test234']
+    # db.commit()
+    return render_template('inventory/index.html',rows=r)
+
+    if request.method == 'POST':
+        rows = []
+        # data = request.get_data()
+        # data = request.stream.read()
+        # data = request.form
+        # rows.append(data)
+        scanned = request.form.getlist("scanned")
+        rows.append(request.form)
+        # return render_template('inventory/index.html',rows=['blah',rows] )
+
+        cancel = request.form.get('cancel') # if key might not exist
+        if cancel:
+            return render_template('inventory/index.html',rows=['Cancelled'] )
+        error = None
+
+        if not scanned and not cancel:
+            error = 'You did not scan anything.'
+
+        if error is not None:
+            flash(error)
+
+        else:
+            db = mssql_db.MSSQL_DB_Conn()
+            r = db.execute_s('select * from web..vw_web_FA_base where TagNumber in (?)',(57749))
+            # db.commit()
+            return render_template('inventory/index.html',rows=r)
+
+    # if FORM
+    # db = mssql_db.MSSQL_DB_Conn()
+
     # ok til here, but next line crashes it
-    a = db.test_results()
+    # a = db.test_results()
     # b = a.__dict__
     # db.spid
     # c = json.dumps(a)
 
     # a = ['blue','red']
-    sql = "select top 1 description from web..vw_web_FA_base"
-
-    sql = "select top 1 name,type from web.sys.tables"
-    r = db.execute_s(sql)
-    return '<code>..{}</code>'.format(a)
-    # return render_template('inventory/index.html', rows=a)
-
-@bp.route('/create', methods=('GET', 'POST'))
-@login_required
-def create():
-    if request.method == 'POST':
-        title = request.form['title']
-        body = request.form['body']
-        error = None
-
-        if not title:
-            error = 'Title is required.'
-
-        if error is not None:
-            flash(error)
-        else:
-            db = get_db()
-            # test_results
-            db.execute(
-                'INSERT INTO post (title, body, author_id)'
-                ' VALUES (?, ?, ?)',
-                (title, body, g.user['id'])
-            )
-            db.commit()
-            return redirect(url_for('blog.index'))
-    return render_template('blog/create.html')
-
-def get_post(id, check_author=True):
-    post = get_db().execute(
-        'SELECT p.id, title, body, created, author_id, username'
-        ' FROM post p JOIN user u ON p.author_id = u.id'
-        ' WHERE p.id = ?',
-        (id,)
-    ).fetchone()
-
-    if post is None:
-        abort(404, f"Post id {id} doesn't exist.")
-
-    if check_author and post['author_id'] != g.user['id']:
-        abort(403)
-
-    return post
-
-@bp.route('/<int:id>/update', methods=('GET', 'POST'))
-@login_required
-def update(id):
-    """Update a post if the current user is the author."""
-    post = get_post(id)
-
-    if request.method == 'POST':
-        title = request.form['title']
-        body = request.form['body']
-        error = None
-
-        if not title:
-            error = 'Title is required.'
-
-        if error is not None:
-            flash(error)
-        else:
-            db = get_db()
-            db.execute(
-                'UPDATE post SET title = ?, body = ?'
-                ' WHERE id = ?',
-                (title, body, id)
-            )
-            db.commit()
-            return redirect(url_for('blog.index'))
-
-    return render_template('blog/update.html', post=post)
-
-@bp.route('/<int:id>/delete', methods=('POST',))
-@login_required
-def delete(id):
-    get_post(id)
-    db = get_db()
-    db.execute('DELETE FROM post WHERE id = ?', (id,))
-    db.commit()
-    return redirect(url_for('blog.index'))
+    # sql = "select top 3 *,name,type from web.sys.tables"
+    # sql = "select top 10 'blah' as blah, * from web..vw_web_FA_base"
+    # r = db.execute_s(sql)
+    # return '<code>..{}</code>'.format(r)
+    return render_template('inventory/scan.html',pgtitle = "Add to Deleted inventory form")
