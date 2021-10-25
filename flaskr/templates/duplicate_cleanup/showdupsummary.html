@@ -1,0 +1,33 @@
+{% extends 'duplicate_cleanup/index.html' %}
+
+{% block content %}
+
+{# block title Duplicate Cleanup, list all dupsets endblock #}
+
+{% for row in rows %}
+  {% if loop.changed(row.dupset) %}
+  <hr />
+    <a href="{{ url_for('.showdupset', dupset = row.dupset) }}">Dupset {{ row.dupset }} Details</a>
+  &middot;
+    {% if row.human_verified %}
+    Human Verified &middot;
+    {% endif %}
+
+    {% if row.goodid %}
+    GoodID: {{ row.goodid }} &middot;
+    {#  
+    <!-- {% elif row.goodid == 0 %}
+    This is a bad dupset, these are actually individual ID_NUMs and should be human verified, n
+    ot processed hear --> #}
+    {% else %}
+    GoodID unknown, or unmatched set &middot;
+    {% endif %}
+
+    From {{ row.db }}..{{ row.origtablewithdup }}
+  {% endif %}
+  
+  <p>{{ row.id_num }} {{ row.LastFirst }}</p>
+
+{% endfor %}
+
+{% endblock %}

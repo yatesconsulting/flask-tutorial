@@ -1,1 +1,1 @@
-@"C:\Users\byates\AppData\Roaming\Python\Python39\Scripts\flask.exe" %*
+@"C:\Users\byates\AppData\Roaming\Python\Python39\Scripts\flask.exe" %* || "C:\Users\bryany\Desktop\GitHub\flask-tutorial\venv\Scripts\flask.exe" %* || "C:\Users\bryany\Desktop\GitHub\flask-tutorial\Scripts\flask.exe" %* 

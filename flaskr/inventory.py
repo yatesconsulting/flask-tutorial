@@ -24,7 +24,7 @@ def deletions():
     r = db.execute_s(sql)
     # r=['test234']
     # db.commit()
-    return render_template('inventory/index.html',rows=r)
+    return render_template('inventory/index.html',rows=['blkahr'])
 
     if request.method == 'POST':
         rows = []

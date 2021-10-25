@@ -1,14 +1,11 @@
-from pymssql import _mssql
-# import _mssql
+import pyodbc
+# from pymssql import _mssql
+
 import threading
 import time
 import queue
 import traceback
 from myflaskrsecrets import dbserver, dbname, dbuid, dbpwd
-
-import sys
-sys.path.insert(0, '/var/www/flaskr')
-from myflasksecrets import dbserver, dbname, dbuid, dbpwd
 
 # http://www.pymssql.org/en/stable/ref/_mssql.html
 
@@ -37,23 +34,25 @@ class MSSQL_DB_Conn():
 
         Returns:
             MSSQLConnection (class) Sets up the connection object for queries.
+
         """        
         self.server =  dbserver
         self.user =  dbuid
+        self.columns = []
+        
+        odbcdriver = "ODBC Driver 17 for SQL Server"
+        odbcdriver = "SQL Server" # not sure if this is always right, or needs to match ODBC 32 or 64 bit
         if self.user == "Trusted_Connection":
-            self.conn = _mssql.connect(server=self.server,
-                                   database=db,
-                                   Trusted_Connection='yes',
-                                   appname=appname or 'Apps')
+            self.conn = pyodbc.connect('Driver={{{}}};Server={};Database={};Trusted_Connection=yes;'.format(odbcdriver, self.server,db))
         else:
             self.password =  dbpwd
-            self.conn = _mssql.connect(server=self.server,
+            self.conn = pyodbc.connect(server=self.server,
                                    user=self.user,
                                    password=self.password,
                                    database=db,
                                    appname=appname or 'Apps')
 
-        self.conn.debug_queries = debug
+        # self.conn.debug_queries = debug
         ### self.log = Application_Logs().setup_logging()
         # Care should be taken to ensure this timeout is a little shorter than
         # than the worker timeout in gunicorn and the nginx gateway timeout.
@@ -62,9 +61,16 @@ class MSSQL_DB_Conn():
         self.warn_if_sql_takes_longer_than = 25  # in seconds
         self.gather_wait_stats_for_sql_taking_longer_than = 5  # in seconds
 
-        self.conn.execute_query('SELECT @@SPID AS SPID', None)
-        for row in self.conn:
-            self.spid = row['SPID']
+        # cursor = conn.cursor()
+        #             # cursor.execute('SELECT * FROM products')
+
+        #             # for i in cursor:
+        #             #     print(i)
+        self.cursor = self.conn.cursor()
+
+        self.cursor.execute('SELECT @@SPID AS SPID')
+        for row in self.cursor:
+            self.spid = row[0]
 
     def execute_i_u_d(self, sql, params=None):
         """
@@ -75,7 +81,9 @@ class MSSQL_DB_Conn():
             params (tup) Group of params for the query
 
         Returns:
-            res (int) 0 success | 1 failure
+            res (bool) True success | False failure
+
+            ----- Rewrite for pyodbc ..... 
         """
 
         try:
@@ -89,18 +97,19 @@ class MSSQL_DB_Conn():
                                  daemon=True)
 
             sql_performance_monitor_thread.start()
-            self.conn.execute_non_query(sql, params)
+            self.cursor.execute(sql)
+            self.conn.commit()
             sql_completion_queue.put("query complete")
 
-            return 0
+            return True # "Done"
 
-        except Exception:
+        except Exception as e:
             sql_completion_queue.put("query complete")
             ### self.log.exception(f"Exception occurred while executing SQL: "
             ###                    f"{sql}. Params: {params}")
-            return 1
+            return False  # e
 
-    def execute_s(self, sql, params=None, col_headers=False):
+    def execute_s(self, sql, params=None, col_headers=True):
         """
         Execute SELECT based statement, including stored procedure.
 
@@ -129,17 +138,17 @@ class MSSQL_DB_Conn():
                                  daemon=True)
 
             sql_performance_monitor_thread.start()
-            self.conn.execute_query(sql, params)
+            self.cursor.execute(sql) # , params)
             sql_completion_queue.put("query complete")
 
-            rows = [{k: v for k, v in row.items()
-                    if type(k) is not int}
-                    for row in self.conn]
-
-            rows.insert(0, [{'data': i} for i in rows[0].keys()]) \
-                if rows and col_headers else False
-
-            return rows
+            self.columns = [column[0] for column in self.cursor.description]
+            results = []
+            count = 0
+            for row in self.cursor.fetchall():
+                results.append(dict(zip(self.columns, row)))
+                count += 1
+            self.record_count = count
+            return results
 
         except Exception:
             sql_completion_queue.put("query complete")
@@ -210,7 +219,7 @@ class MSSQL_DB_Conn():
 
         try:
 
-            return self.conn.rows_affected
+            return self.cursor.rows_affected
 
         except Exception as e:
             print(e)
@@ -235,7 +244,7 @@ class MSSQL_DB_Conn():
         sql = "select top 1 name,type from web.sys.tables"
 
         try:
-            r = self.conn.execute_row(sql)
+            r = self.cursor.execute(sql)
             return r
             # return "blue<>{}".format(r)
             # return r.__dict__
@@ -245,5 +254,5 @@ class MSSQL_DB_Conn():
             # return ("EXCEPTION:{}".format(e))
 
         finally:
-            self.conn.close()
+            self.cursor.close()
 

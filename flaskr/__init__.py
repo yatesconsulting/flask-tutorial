@@ -1,10 +1,10 @@
 from flask import Flask
 import os
 
-# import sys
+import sys
 # sys.path.insert(0, '/var/www/flaskr')
 # sys.path.insert(0, 'C:/Users/bryany/Desktop/GitHub/flask-tutorial')
-# from myflaskrsecrets import secret_key
+from myflaskrsecrets import secret_key
 
 def create_app(test_config=None):
     # create and configure the app
@@ -29,7 +29,8 @@ def create_app(test_config=None):
         os.makedirs(app.instance_path)
     except OSError:
         pass
-    app.secret_key = os.getenv('SECRET_KEY', 'for dev')
+    # app.secret_key = os.getenv('SECRET_KEY', 'for dev')
+    app.secret_key = secret_key
 
     # a simple page that says hello
     @app.route('/hello')
@@ -65,6 +66,9 @@ def create_app(test_config=None):
 
     from . import inventory
     app.register_blueprint(inventory.bp)
+
+    from . import duplicate_cleanup
+    app.register_blueprint(duplicate_cleanup.bp)
 
     from . import home
     app.register_blueprint(home.bp)

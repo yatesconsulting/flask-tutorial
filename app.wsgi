@@ -1,7 +1,10 @@
+# this file used with Apache webserver
+
 import os
 import sys
 sys.path.insert(0, '/var/www/flaskr')
-from myflasksecrets import secret_key
+
+from myflaskrsecrets import secret_key
 
 activate_this = '/var/www/.virtualenvs/flaskr-n7hAE5T6/bin/activate_this.py'
 

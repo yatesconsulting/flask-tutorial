@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h2>{% block title %}Duplicate Cleanup{% endblock %}</h2>
+{% endblock %}
+
+{% block content %}
+
+
+{% if g.user %}
+
+
+{% for ln in qtyt %}
+<p>{{ ln }}</p>
+{% endfor %}
+
+{% for row in rows %}
+  <p>{{ row }}</p>
+{% endfor %}
+
+
+{% for col in cols %}
+  <p>{{ col }}</p>
+{% endfor %}
+
+Total lines (maybe 1 more):  {{rows|length}}
+
+
+{% endif %}
+
+
+
+{% endblock %}
