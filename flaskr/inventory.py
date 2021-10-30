@@ -6,7 +6,8 @@ from werkzeug.exceptions import abort
 from flaskr.auth import login_required
 from flaskr.db import get_db
 
-from . import mssql_db
+from . import mssql_db as dbsource
+# from . import pyodbc_db as dbsource
 
 bp = Blueprint('inventory', __name__, url_prefix='/inv')
 
@@ -18,13 +19,14 @@ def index():
 @bp.route('/del', methods=["GET", "POST"])
 @login_required
 def deletions():
-    db = mssql_db.MSSQL_DB_Conn()
+    db = dbsource.MSSQL_DB_Conn() # breaks instantly from Apache, but not :5000?? with pyodbc
+    # pyodbc commands work from sftp to iveesql3 but not to older sql2012
     # sql = "select * from web..vw_web_FA_base where TagNumber = '{}'".format(57749)
     sql = "select top 10 'blah' as blah, * from web..vw_web_FA_base"
     r = db.execute_s(sql)
     # r=['test234']
     # db.commit()
-    return render_template('inventory/index.html',rows=['blkahr'])
+    return render_template('inventory/index.html',rows=r)
 
     if request.method == 'POST':
         rows = []
@@ -48,7 +50,7 @@ def deletions():
             flash(error)
 
         else:
-            db = mssql_db.MSSQL_DB_Conn()
+            db = dbsource.MSSQL_DB_Conn()
             r = db.execute_s('select * from web..vw_web_FA_base where TagNumber in (?)',(57749))
             # db.commit()
             return render_template('inventory/index.html',rows=r)

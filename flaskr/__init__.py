@@ -29,8 +29,7 @@ def create_app(test_config=None):
         os.makedirs(app.instance_path)
     except OSError:
         pass
-    # app.secret_key = os.getenv('SECRET_KEY', 'for dev')
-    app.secret_key = secret_key
+    app.secret_key = os.getenv('SECRET_KEY', secret_key)
 
     # a simple page that says hello
     @app.route('/hello')
@@ -43,7 +42,7 @@ def create_app(test_config=None):
         # a = subprocess.run(['env'], stdout=subprocess.PIPE)
         # a.stdout
         return '<h1>Hello there, {}!</h1> from flaskr/__init__.py'.format(name)
-        # return '<h1>Hello there, {}!</h1>'.format(app.secret_key)
+        # return '<h1>Hello there, {}</h1>'.format(app.secret_key)
 
     @app.route('/hello2')
     @app.route('/about')
