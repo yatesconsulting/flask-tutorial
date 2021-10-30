@@ -38,19 +38,28 @@ class MSSQL_DB_Conn():
         """        
         self.server =  dbserver
         self.user =  dbuid
+        self.password =  dbpwd
         self.columns = []
         
-        odbcdriver = "ODBC Driver 17 for SQL Server"
+        # linuxodbcdriver = 'FreeTDS'
+        linuxodbcdriver = "ODBC Driver 17 for SQL Server"
         odbcdriver = "SQL Server" # not sure if this is always right, or needs to match ODBC 32 or 64 bit
         if self.user == "Trusted_Connection":
             self.conn = pyodbc.connect('Driver={{{}}};Server={};Database={};Trusted_Connection=yes;'.format(odbcdriver, self.server,db))
         else:
-            self.password =  dbpwd
-            self.conn = pyodbc.connect(server=self.server,
-                                   user=self.user,
-                                   password=self.password,
-                                   database=db,
-                                   appname=appname or 'Apps')
+            # server = 'tcp:myserver.database.windows.net' 
+            # database = 'mydb' 
+            # username = 'myusername' 
+            # password = 'mypassword' 
+            # cnxn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};SERVER='+server+';DATABASE='+database+';UID='+username+';PWD='+ password)
+            # cursor = cnxn.cursor()
+            # self.conn = pyodbc.connect(server=self.server,
+            #                        user=self.user,
+            #                        password=self.password,
+            #                        database=db,
+            #                        appname=appname or 'Apps')
+            # connstring = 'DRIVER={{{}}};SERVER=tcp:{};DATABASE={};UID={};PWD={};'.format(linuxodbcdriver, self.server,db,self.user,dbpwd)
+            self.conn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};SERVER=10.99.60.60;DATABASE=web;UID=ITFixedAssets;PWD="@YellowDog91721"')
 
         # self.conn.debug_queries = debug
         ### self.log = Application_Logs().setup_logging()
@@ -61,11 +70,6 @@ class MSSQL_DB_Conn():
         self.warn_if_sql_takes_longer_than = 25  # in seconds
         self.gather_wait_stats_for_sql_taking_longer_than = 5  # in seconds
 
-        # cursor = conn.cursor()
-        #             # cursor.execute('SELECT * FROM products')
-
-        #             # for i in cursor:
-        #             #     print(i)
         self.cursor = self.conn.cursor()
 
         self.cursor.execute('SELECT @@SPID AS SPID')

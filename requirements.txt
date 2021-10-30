@@ -4,5 +4,7 @@ Flask==2.0.2
 itsdangerous==2.0.1
 Jinja2==3.0.2
 MarkupSafe==2.0.1
-pymssql==2.2.2
 Werkzeug==2.0.2
+pyodbc==4.0.32
+pymssql==2.2.2
+# pymssql==2.1.1 # try to use pyodbc instead

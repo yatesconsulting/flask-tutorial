@@ -6,6 +6,9 @@ import queue
 import traceback
 from myflaskrsecrets import dbserver, dbname, dbuid, dbpwd
 
+# import sys
+# sys.path.insert(0, '/var/www/flaskr')
+# from myflaskrsecrets import dbserver, dbname, dbuid, dbpwd
 
 # http://www.pymssql.org/en/stable/ref/_mssql.html
 
@@ -37,18 +40,19 @@ class MSSQL_DB_Conn():
         """        
         self.server =  dbserver
         self.user =  dbuid
+        self.password =  dbpwd
         if self.user == "Trusted_Connection":
             self.conn = _mssql.connect(server=self.server,
                                    database=db,
                                    Trusted_Connection='yes',
                                    appname=appname or 'Apps')
         else:
-            self.password =  dbpwd
             self.conn = _mssql.connect(server=self.server,
                                    user=self.user,
                                    password=self.password,
-                                   database=db,
-                                   appname=appname or 'Apps')
+                                   database=db)
+                                #    ,
+                                #    appname=appname or 'Apps')
 
         self.conn.debug_queries = debug
         ### self.log = Application_Logs().setup_logging()
