@@ -309,8 +309,9 @@ def _prepidsforformselection(jdbname, dupset, dipid, ids, table, extrakeys):
     rowj = []
     wrk = []
     ans = []
+    goodid = ids[0]
     cols = _colsfromtable(jdbname, table) # a little redundant, maybe
-    missinggoodid = False # put one in for ID_NUM but everything else ---
+    missinggoodid = False # put one in for ID_NUM but everything else ---, if missing
     morethanonerowperid = False # look for keys
 
     xkeys = ""
@@ -329,32 +330,51 @@ def _prepidsforformselection(jdbname, dupset, dipid, ids, table, extrakeys):
     order by ID_NUM""".format( jdbname, table, ",".join(map(str, ids)), xkeys)
     rows = db.execute_s(sql) 
 
+    # return rows
+
     # ok, let's sort lots of things out
     # if there is no goodid, then we need to put the goodid in the id_num first row, but all other first rows will be "---"
     # need to identify which row is the goodid, and put it(them?) first
+    #  so rebuild entire list in correct display order
     # if there is more than one row for any id, then we need to only offer key selection
-    rowsthathavegoodid = []
-
+    rowsordered = []
+    missinggoodid = not(goodid in [l['ID_NUM'] for l in rows])
     idcounts = {}
     for i in ids:
         idcounts[i] = 0
-    for r in range(len(rows)):
-        if rows[r]['ID_NUM'] and rows[r]['ID_NUM'] == ids[0]:
-            rowsthathavegoodid.append(r)
-        for id in ids:
-            if rows[r]['ID_NUM'] == id:
-                idcounts[id] += 1
-    # if any idcounts values are > 1 then morethanonerowperid = True
-    morethanonerowperid = any(v > 1 for v in idcounts.values())
-    idcounts = {}
+    
+    for r in rows:
+        if r['ID_NUM']:
+            idcounts[r['ID_NUM']] += 1
+            if r['ID_NUM'] == goodid:
+                rowsordered.append(r)
+            else:
+                rowsordered.insert(0, r)        
+        else:
+            # nothing should ever make it here
+            pass
+    # if any idcounts > 1
+    morethanonerowperid = max([l for l in idcounts]) > 1
+    # idcounts = {}
 
-    # if rowsthathavegoodid is empty, then missinggoodid = True
-    missinggoodid = not rowsthathavegoodid
+    # not sure if I need this
+    # if missinggoodid:
+    #     rowsordered.append({'ID_NUM':'---'})
 
     # # if only one row, then all defaults revolve around it, don't check so many things later
     # if len(rows) == 1:
     #     if missinggoodid:
     #         pass
+
+    # if no goodid, show a line of ---'s in it's place, what ID gets updated to goodid?
+
+
+    # if morethanonerowperid == True
+    #   we should only allow selection of keys to reduce sets down
+    #    so lock down key rows with disabled, but not other rows
+    #    lock down all options rows with disabled
+    #    normal "selection" routines? or just leave everything unchecked 
+    #   still hide same/ignore/auto rows
 
     for col in cols:
         wcol = []
@@ -405,7 +425,20 @@ def _insertintodiptable(jdbname, dupset, table, ek=""):
     (dupset, tablename, xkeys, db) VALUES ({},'{}','{}','{}')
     """.format(dbname, dupset, table, ek, jdbname)
     db.execute_i_u_d(sql)
-    
+
+def _allnotdonetablesfordupset(dupset):
+    ''' return list of only the tables with any partial keys that are in a started dupset, but HELPME flagged''' 
+    db = pyodbc_db.MSSQL_DB_Conn()
+    sql = """select * from {}..BAY_DupsInProgress where dupset = {} and xkeys = 'HELPME'
+    """.format(dbname, dupset)
+    return db.execute_s(sql)
+
+def _allkeyscombosforgooddupset(dupset):
+    """ return list of only this dupset from prep table with good set of data, no HELPMEs """
+    db = pyodbc_db.MSSQL_DB_Conn()
+    sql = """select * from {}..BAY_DupsInProgress where dupset = {}
+        """.format(dbname, dupset)
+    return db.execute_s(sql)
 
 @bp.route('/showdupset/<int:dupset>', methods=('GET', 'POST'))
 @login_required
@@ -425,6 +458,8 @@ def showdupset(dupset):
     # return render_template('duplicate_cleanup/index.html', rows=ids+["goodid={}".format(goodid)])
     debugrows = []
     jcols = []
+    tablelist = []
+    skipextrakeycheck = False
 
     # 1. dupset is inserted into BAY_DupsInProgress noting any that that need more info via HELPME flag in xkey col
     # 2. Work through each HELPME adding new BAY_DupExtraKeys values and trying again
@@ -433,16 +468,20 @@ def showdupset(dupset):
     if ckstatus and ckstatus[0]['notdone']:
         # not all ready, define some more keys
         # just work with the notdone flagged ones
-        return render_template('duplicate_cleanup/index.html', rows=['define some more keys'])
+        tablelist = _allnotdonetablesfordupset(dupset)
+        skipextrakeycheck = False
+        # return render_template('duplicate_cleanup/index.html', rows=['define some more keys'])
     elif ckstatus:
         # must all be OK, let's do it for real
-        return render_template('duplicate_cleanup/index.html', rows=['run it for real'])
+        tablelist = _allkeyscombosforgooddupset(dupset)
+        skipextrakeycheck = True
+        # return render_template('duplicate_cleanup/index.html', rows=tablelist)
     else:
         # nothing for this dupset, let's fill the BAY_DupsInProgress best we can
         # then redirect back to check it again
-        alltableswithidnumcol = _listalltableswithid_numcolumns(jdbname)
-        # alltableswithidnumcol = [{'table_name':'NameMaster'}]
-        for t in alltableswithidnumcol:
+        tablelist = _listalltableswithid_numcolumns(jdbname)
+        # tablelist = [{'table_name':'NameMaster'}]
+        for t in tablelist:
             table = t['table_name']
             cols = _colsfromtable(jdbname, table)
             extrakeys = _extrakeys(jdbname, table, ids)
@@ -469,7 +508,7 @@ def showdupset(dupset):
                     _insertintodiptable(jdbname, dupset, table, helpme)
                 elif s:
                     for ek in extrakeys:
-                        _insertintodiptable(jdbname, dupset, table, ek) # store as dictionary?
+                        _insertintodiptable(jdbname, dupset, table, ek) # store ek as dictionary
             else:
                 s = _idsintable(jdbname, table, ids)
                 helpme = ""
@@ -481,6 +520,22 @@ def showdupset(dupset):
                 #     'table':table, 'ans':s})
         # return render_template('duplicate_cleanup/index.html', rows=debugrows)
         return redirect(url_for('.showdupset', dupset=dupset))
+    # ok, now continue with the correct data set to fill the form info
+    
+    for t in tablelist:
+        table = t['tablename']
+        dupset = t['dupset']
+        dipid = t['ID']
+        jdbname = t['db']
+        extrakeys = []
+        if skipextrakeycheck:
+            extrakeys = t['xkeys']
+        else:
+            extrakeys = _extrakeys(jdbname, table, ids)
+        # return render_template('duplicate_cleanup/index.html', rows=t)
+        rows = _prepidsforformselection(jdbname, dupset, dipid, ids, table, extrakeys)
+        return render_template('duplicate_cleanup/index.html', rows=[ids,table,extrakeys,rows]) # jump out on first table to ck
+    
 
     # missingkeys = []
     # ignorelist = _ignorefields(table)
@@ -492,7 +547,7 @@ def showdupset(dupset):
     #  diabled(disable|), options [{selected(selected|),disbled(disabled|),showval, formval}]
     headerinfo = {'dupset':dupset, 'goodid':goodid, 'ids':ids}
 
-    # return render_template('duplicate_cleanup/index.html', rows=alltableswithidnumcol)
+    # return render_template('duplicate_cleanup/index.html', rows=tablelist)
     
 
 
@@ -631,32 +686,38 @@ def test():
 @login_required
 def test2():
     headerinfo = {'dupset':29, 'goodid':4363131 , 'ids':[4363131, 4357237, 4366909]}
-    rowsj = [{'table':'NameMaster','field':'id_num','class':'auto','disabled':'disabled',
+    rowsj = [{'table':'NAME_TYPE_TABLE','field':'id_num','class':'auto','disabled':'disabled',
+    'xkeys':'blah=blah','choosekeys':'yes','dupxtrakey':234,
     'options':[{'selected':'selected','showval':'4363131'},
     {'showval':'4357237'},
     {'showval':'4366909'}]},
-    {'table':'NameMaster',
+    {'table':'NAME_TYPE_TABLE',
+    'xkeys':'blah=blah','choosekeys':'yes','dupxtrakey':234,
     'field':'field2','class':'auto',
     'options':[{'selected':'selected','showval':'B'},
     {'showval':'NULL','formval':'T0.field2=T1.field2'},
     {'showval':'None','formval':'T0.field2=T2.field2'}]},
-    {'table':'NameMaster',
+    {'table':'NAME_TYPE_TABLE',
+    'xkeys':'blah=blah','choosekeys':'yes','dupxtrakey':234,
     'field':'field3','class':'auto',
     'options':[{},
     {'selected':'selected','showval':'C','formval':'T0.field3=T1.field3'},
     {'showval':'None','formval':'T0.field3=T2.field3'}]},
-    {'table':'NameMaster',
+    {'table':'NAME_TYPE_TABLE',
+    'xkeys':'blah=blah','choosekeys':'yes','dupxtrakey':234,
     'field':'field4','class':'ignore',
     'options':[{'selected':'selected','showval':'B'},
     {'showval':'NULL','formval':'T0.field4=T1.field4'},
     {'showval':'None','formval':'T0.field4=T2.field4'}]},
-    {'table':'NameMaster',
+    {'table':'NAME_TYPE_TABLE',
+    'xkeys':'blah=blah','choosekeys':'yes','dupxtrakey':234,
     'field':'field5','class':'same',
     'options':[{'selected':'selected','showval':'B'},
     {'showval':'B','formval':'T0.field5=T1.field5'},
     {'showval':'B','formval':'T0.field5=T2.field5'}]}
     ,
-    {'table':'NameMaster',
+    {'table':'NAME_TYPE_TABLE',
+    'xkeys':'blah=blah','choosekeys':'yes','dupxtrakey':234,
     'field':'field6','class':'needinput',
     'options':[{'showval':'B'},
     {'showval':'C','formval':'T0.field5=T1.field5'},
@@ -665,3 +726,47 @@ def test2():
     ]
     return render_template('duplicate_cleanup/showdupsetdetail.html', rows=rowsj, headerinfo=headerinfo)
 
+
+@bp.route('/test3')
+@login_required
+def test3():
+    headerinfo = {'dupset':29, 'goodid':4363131 , 'ids':[4363131, 4357237, 4366909]}
+    rowsj = [{'table':'NAME_TYPE_TABLE','field':'id_num','class':'auto','disabled':'disabled',
+    'xkeys':'blah=blah','choosekeys':'yes','dupxtrakey':234,'disabled':'disabled',
+    'options':[{'selected':'selected','showval':'4363131'},
+    {'showval':'4357237'},
+    {'showval':'4366909'}]},
+    {'table':'NAME_TYPE_TABLE',
+    'xkeys':'blah=blah','choosekeys':'yes','dupxtrakey':234,
+    'field':'field2','class':'auto',
+    'options':[{'selected':'selected','showval':'B','disabled':'disabled'},
+    {'showval':'NULL','formval':'T0.field2=T1.field2','disabled':'disabled'},
+    {'showval':'None','formval':'T0.field2=T2.field2','disabled':'disabled'}]},
+    {'table':'NAME_TYPE_TABLE',
+    'xkeys':'blah=blah','choosekeys':'yes','dupxtrakey':234,
+    'field':'field3','class':'auto',
+    'options':[{'disabled':'disabled'},
+    {'selected':'selected','showval':'C','formval':'T0.field3=T1.field3','disabled':'disabled'},
+    {'showval':'None','formval':'T0.field3=T2.field3','disabled':'disabled'}]},
+    {'table':'NAME_TYPE_TABLE',
+    'xkeys':'blah=blah','choosekeys':'yes','dupxtrakey':234,
+    'field':'field4','class':'ignore',
+    'options':[{'selected':'selected','showval':'B','disabled':'disabled'},
+    {'showval':'NULL','formval':'T0.field4=T1.field4','disabled':'disabled'},
+    {'showval':'None','formval':'T0.field4=T2.field4','disabled':'disabled'}]},
+    {'table':'NAME_TYPE_TABLE',
+    'xkeys':'blah=blah','choosekeys':'yes','dupxtrakey':234,
+    'field':'field5','class':'same',
+    'options':[{'selected':'selected','showval':'B','disabled':'disabled'},
+    {'showval':'B','formval':'T0.field5=T1.field5','disabled':'disabled'},
+    {'showval':'B','formval':'T0.field5=T2.field5','disabled':'disabled'}]}
+    ,
+    {'table':'NAME_TYPE_TABLE',
+    'xkeys':'blah=blah','choosekeys':'yes','dupxtrakey':234,
+    'field':'field6','class':'auto','disabled':'disabled',
+    'options':[{'showval':'B','disabled':'disabled'},
+    {'showval':'C','formval':'T0.field5=T1.field5','disabled':'disabled'},
+    {'showval':'D','formval':'T0.field5=T2.field5','disabled':'disabled'}]}
+
+    ]
+    return render_template('duplicate_cleanup/showdupsetdetail.html', rows=rowsj, headerinfo=headerinfo)

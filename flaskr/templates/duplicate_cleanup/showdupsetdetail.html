@@ -95,14 +95,25 @@ function displayClass(cl) {
   {% endif %}
   
   <div class="{{ row.disabled }}{{ row.class }} {{ row.disabled }}{{ row.table}}{{ row.class }}" style="margin:10px;">
-  {{ row.field }} <br />
-  <select name="{{ row.table }}.{{ row.field }}" size="{{ headerinfo.ids|length }}" required  {{ row.disabled }}>
+  
+    <label for="{{ row.table }}.{{ row.field }}">{{ row.field }} </label>
+  
+    <br />
+  <select id="{{ row.table }}.{{ row.field }}.{{ row.xkeys }}" name="{{ row.table }}.{{ row.field }}" size="{{ headerinfo.ids|length }}" required  {{ row.disabled }}>
 
   {% for option in row.options %}
   <option  value="{{option.formval}}" {{ option.selected }} {{ option.disabled }}>{{ option.showval }}</option>
   {% endfor %}
   </select>
+
+  {% if row.dupxtrakey %}
+   
+  <label for="ck{{ row.table }}.{{ row.field }}">Add {{ row.field }} to key list of {{row.table}}</label>
+    <input type="checkbox" id="ck{{ row.table }}.{{ row.field }}" name="dupkeyrow{{ row.dupxtrakey }}" value="{{ row.field }}">
+  {% endif %}
+  
 </div>
+
   
 {% endfor %}
   <input type="submit" value="Submit">
