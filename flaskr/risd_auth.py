@@ -23,7 +23,7 @@ class ADAuthenticated():
             self.username = "{}{}".format(self.username, self.ldapdomain)
             print("username tweaked to {}".format(self.username))
         self.password = password
-        self.base_dn = 'DC=risd,DC=k12,DC=nm,DC=us'
+        self.base_dn = 'DC=risd,DC=k12,DC=nm,DC=us' # push this back to myflasksecrets someday
         # CN=ldap connector,OU=Non-MailboxUsers,DC=risd,DC=k12,DC=nm,DC=us
         # self.admin_dn = "OU=ADMIN,OU=RISD,{}".format(self.base_dn)
         # self.studentroot = "OU=STUDENTS,OU=RISD,{}".format(self.base_dn)
