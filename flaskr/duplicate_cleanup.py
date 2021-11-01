@@ -50,7 +50,6 @@ def refreshdups():
     #     body = request.form['body']
 
     db = pyodbc_db.MSSQL_DB_Conn()
-    # a = ['blue','red']
     jdbname = "TmsEPly" # Prd
     done = []
     sql = "delete from {}..BAY_DupIDs".format(dbname)
