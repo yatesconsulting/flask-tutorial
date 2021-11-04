@@ -4,7 +4,7 @@ sys.path.insert(0, r'C:/Users/bryany/Desktop/GitHub/flask-tutorial/flaskr') # re
 sys.path.insert(0, r'C:/Users/bryany/Desktop/GitHub/flask-tutorial') # required for ?import?
 # from flaskr import pyodbc_db
 from flaskr import pyodbc_db
-from myflaskrsecrets import dbname ## mcn_connet for us
+from myflaskrsecrets import dbname ## mcn_connect for us
 
 class Dupset():
     def __init__(self, dupset):
@@ -15,6 +15,8 @@ class Dupset():
         self.ids = []
         self.goodid = 0
         self.status = "" # started, needs keys, ready, staged?, complete?
+        self.formheaderinfo = {}
+        self.formbodyinfo = []
 
         self.db = pyodbc_db.MSSQL_DB_Conn() # maybe this is the way to only use one db connection?
         sql = """select distinct db from {}..BAY_DupIDs""".format(dbname)
@@ -61,13 +63,14 @@ class Dupset():
         # 3. all HELME records gone, move on to full merge set of tables
     
         # this SQL determines if a dupset is being worked on, and ready for final processing
-        sql = """select username, dupset, count(*) as cnt
+        sql = """select  dupset, count(*) as cnt
             , max(case isnull(xkeys,'') when 'HELPME' then 1 else 0 end) as notdone
             from {}..BAY_DupsInProgress
             where dupset = {}
-            group by  username, dupset
+            group by dupset
         """.format(self.dbname, self.dupset)
         ckstatus = self.db.execute_s(sql)
+        # print("ckstatus={}".format(ckstatus))
 
         if ckstatus and ckstatus[0]['notdone']:
             self.status = "needs keys"
@@ -77,19 +80,6 @@ class Dupset():
             self.status = "not prepped"
         return self.status
     
-    # def _dupsummary():
-    #     db = pyodbc_db.MSSQL_DB_Conn()
-    #     sql = """select db as [Database],max(updated) as [LastUpdated], count(distinct dupset) as dupsets
-    #     , (select count(*) as badids from {}..BAY_DupIDs where goodid = 0)
-    #     as HumanVerifiedButUnmatched
-    #     from MCN_Connect..BAY_DupIDs
-    #     group by db""".format(dbname)
-    #     r = db.execute_s(sql)
-    #     if r:
-    #         return r[0]
-    #     else:
-    #         return "nothing set yet"
-
     def _listalltableswithid_numcolumns(self):
         # db = pyodbc_db.MSSQL_DB_Conn()
         sql = "SELECT * from {}..BAY_DupExtraKeys".format(self.dbname)
@@ -119,18 +109,16 @@ class Dupset():
         # return the id_num count, and any other fields that are required for key2 generation
         # db = pyodbc_db.MSSQL_DB_Conn()
         ek = ""
-        ans = []
+        r = []
         sql = """select xkeys from {}..BAY_DupExtraKeys
             where tablename = '{}'
             """.format(self.dbname, table)
         extrakeys = self.db.execute_s(sql)
         if extrakeys and extrakeys[0]['xkeys']:
-            ek = extrakeys[0]['xkeys']['keys'].values() #  prob wrong
             sql = """select distinct {} from {}..{} where id_num in ({})
-            """.format(ek, self.jdbname, table, ",".join(map(str, self.ids)))
-            # return ['ek', sql]
-            return self.db.execute_s(sql)
-        # return [sql]
+            """.format(extrakeys[0]['xkeys'], self.jdbname, table, ",".join(map(str, self.ids)))
+            r = self.db.execute_s(sql)
+            return r
         return []
 
     def _rechecksummarycounts(self, table, ek):
@@ -196,18 +184,6 @@ class Dupset():
         r = self.db.execute_s(sql)
         return r
 
-    def _checkstatusofdupinprogress(self):
-        # db = pyodbc_db.MSSQL_DB_Conn()
-        # this SQL determines if a dupset is being worked on, and ready for final processing
-        sql = """select username, dupset, count(*) as cnt
-            , max(case isnull(xkeys,'') when 'HELPME' then 1 else 0 end) as notdone
-            from {}..BAY_DupsInProgress
-            where dupset = {}
-            group by  username, dupset
-        """.format(self.dbname, self.dupset)
-        r = self.db.execute_s(sql)
-        return r
-
     def _ignorefields(self, table):
         """return ignored fields in the table, or a constant list for now"""
         return ['approwversion','changeuser','changejob','changetime','user_name','job_time']
@@ -236,7 +212,6 @@ class Dupset():
             showval: value shown to user
             formval: value submitted to form
         """
-        # db = pyodbc_db.MSSQL_DB_Conn()
         ignorefields = self._ignorefields(table)
 
         rowj = []
@@ -353,6 +328,12 @@ class Dupset():
 
     def _insertintodiptable(self, table, ek=""):
         ''' insert into BAY_DupsInProgress'''
+        newek = []
+        if ek and type(ek) is dict:
+            for e  in ek:
+                newek.append("{}={}".format(e, ek[e]))
+            ek = ', '.join(newek)
+
         # db = pyodbc_db.MSSQL_DB_Conn()
         sql = """insert into {}..BAY_DupsInProgress
         (dupset, tablename, xkeys, db) VALUES ({},'{}','{}','{}')
@@ -373,142 +354,27 @@ class Dupset():
             """.format(self.dbname, self.dupset)
         return self.db.execute_s(sql)
 
-    # @bp.route('/showdupset/<int:dupset>', methods=('GET', 'POST'))
-    # @login_required
-    def showdupset(self):
-        # dupids = self._basicdupsetinfo()
-        # return render_template('duplicate_cleanup/index.html', rows=dupids)
-        # jdbname = dupids[0]['db']
-        # goodid = dupids[0]['goodid']
-        # if not goodid:
-        #     flash("Please identify the goodid and refresh duplist first (dupset {})".format(dupset))
-        #     return redirect(url_for('.index'))
-        # sort the ids to put goodid first, then ohen others in sorted order, for repeatability later
-        # ids = sorted([l['id_num'] for l in dupids]) # another stackoverflow success story
-        # ids.remove(goodid)
-        # ids.insert(0, goodid)
-        numids = len(self.ids)
-        # return render_template('duplicate_cleanup/index.html', rows=ids+["goodid={}".format(goodid)])
-        debugrows = []
-        jcols = []
-        tablelist = []
-        skipextrakeycheck = False
-
-        # 1. dupset is inserted into BAY_DupsInProgress noting any that that need more info via HELPME flag in xkey col
-        # 2. Work through each HELPME adding new BAY_DupExtraKeys values and trying again
-        # 3. all HELME records gone, move on to full merge set of tables
-        ckstatus = self._checkstatusofdupinprogress()
-        if ckstatus and ckstatus[0]['notdone']:
-            # not all ready, define some more keys
-            # just work with the notdone flagged ones
-            tablelist = self._allnotdonetablesfordupset()
-            skipextrakeycheck = False
-            # return render_template('duplicate_cleanup/index.html', rows=['define some more keys'])
-        elif ckstatus:
-            # must all be OK, let's do it for real
-            tablelist = self._allkeyscombosforgooddupset()
-            skipextrakeycheck = True
-            # return render_template('duplicate_cleanup/index.html', rows=tablelist)
-        else:
-            # nothing for this dupset, let's fill the BAY_DupsInProgress best we can
-            # then redirect back to check it again
-            tablelist = self._listalltableswithid_numcolumns()
-            # tablelist = [{'table_name':'NameMaster'}]
-            for t in tablelist:
-                table = t['tablename']
-                cols = self._colsfromtable(table)
-                extrakeys = self._extrakeys(table)
-                # extrakeys = [{'YR':2017, 'TRM':10}, {'YR':2017	, 'TRM':20}, {'YR':2017	, 'TRM':30}]
-                # debugrows.append({'xtrakeys':'_extrakeys', 'ans':extrakeys, 'table': table})
-                # if extrakeys:
-                #     for extrakey in extrakeys:
-                #         return render_template('duplicate_cleanup/index.html', rows=[table,extrakey])
-                #         jcols.append(_prepidsforformselection(jdbname, dupset, 0, ids, table, extrakey))
-                # else:
-                #     jcols.append( _prepidsforformselection(jdbname, dupset, 0, ids, table, extrakeys="") )
-
-                # return render_template('duplicate_cleanup/index.html', rows=['blah',table,jcols])
-
-                if extrakeys:
-                    for ek in extrakeys:
-                        s = self._idsintable(table, ek)
-                        if s and max([l['cnt'] for l in s]) > 1:
-                            helpme = 'HELPME'
-                        # debugrows.append({'results':'from _idsintable w/ extrakey', 
-                        # 'table':table, 'extrakey':ek, 'ans':s})
-                        # _buildformdetaillines(jdbname, table, s, ids, cols, ek)
-                    if s and helpme:
-                        self._insertintodiptable(table, helpme)
-                    elif s:
-                        for ek in extrakeys:
-                            self._insertintodiptable(table, ek) # store ek as dictionary
-                else:
-                    s = self._idsintable(table)
-                    helpme = ""
-                    if s and max([l['cnt'] for l in s]) > 1:
-                        helpme = "HELPME"
-                    if s:
-                        self._insertintodiptable(table, helpme)
-                    # debugrows.append({'results':'from _idsintable (no extrakey)', 
-                    #     'table':table, 'ans':s})
-            # return render_template('duplicate_cleanup/index.html', rows=debugrows)
-            # this one # return redirect(url_for('.showdupset', dupset=dupset))
-
-
-        # ok, now continue with the correct data set to fill the form info
-        
+    def _loopoveralltables(self, tablelist):
+        self.formheaderinfo = {'dupset':self.dupset, 'goodid':self.goodid, 'ids':self.ids}        
         for t in tablelist:
             table = t['tablename']
-            dupset = self.dupset
             dipid = t['ID']
-            jdbname = self.jdbname # t['db']
-            extrakeys = []
-            if skipextrakeycheck:
+            extrakeys = ""
+            if t['xkeys']:
                 extrakeys = t['xkeys']
             else:
                 extrakeys = self._extrakeys(table)
-            # return render_template('duplicate_cleanup/index.html', rows=t)
-            rows = self._prepidsforformselection(dipid, table, extrakeys)
-            # this one #return render_template('duplicate_cleanup/index.html', rows=[ids,table,extrakeys,rows]) # jump out on first table to ck
         
-
         # missingkeys = []
         # ignorelist = _ignorefields(table)
         # maybe add some more to this with another table to join on (per table results)
-        debugrows.append("comparing {} with the goodid of {}".format(self.ids, self.goodid))
+        # debugrows.append("comparing {} with the goodid of {}".format(self.ids, self.goodid))
         
         rowsj = [] # for jinja2, this is the layout of the html form
         # each row is a dictionary with keys table, field, class (auto|needinput|same|ignore),
         #  diabled(disable|), options [{selected(selected|),disbled(disabled|),showval, formval}]
-        headerinfo = {'dupset':self.dupset, 'goodid':self.goodid, 'ids':self.ids}
-
-        # return render_template('duplicate_cleanup/index.html', rows=tablelist)
-        
 
 
-            # # 1. find if there are any count(*) > 1, poisons entire dupset until corrected
-            # if s and max([l['cnt'] for l in s]) > 1:
-            #     tablecorrectionneeded = True
-            #     debugrows.append({'tablecorrection':True,'table':table, 'dupset':dupset})
-            #     missingkeys.append([{'tablecorrection':True,'table':table, 'dupset':dupset}]) 
-
-            #     # return render_template('duplicate_cleanup/index.html', 
-            #     #     rows=['found some dup rows per id in',table])
-            
-            # # missingkeys is the only array filled once tablecorrectionneeded is toggled True
-            # if tablecorrectionneeded:
-            #     continue
-
-            # # and run them, and check them again
-            # if morekeys:
-            #     for ek in morekeys:
-            #         pass
-            # # s = _rechecksummarycounts(jdbname, table, ids, ek):
-
-            # # now loop over each of the morekeys to get a new uniq set for all this again
-            
-
-            # # return render_template('duplicate_cleanup/index.html', rows=s)
             # # is the goodid one of the ids returned?
             # goodidins = goodid in [l['id_num'] for l in s]
             # # return render_template('duplicate_cleanup/index.html', rows=[goodidins])
@@ -599,37 +465,102 @@ class Dupset():
             #                     goodidmarker = ""
             #                 # thishtml += "{}{}{}\n".format(goodidmarker, uglysql[0][ttag], goodidmarker)
 
-        # this one # return render_template('duplicate_cleanup/index.html', rows=debugrows)
-        # return render_template('duplicate_cleanup/showdupsetdetail.html', rows=[thishtml])
+
+            # rows = self._prepidsforformselection(dipid, table, extrakeys)???
+
+
+
+    # @bp.route('/showdupset/<int:dupset>', methods=('GET', 'POST'))
+    # @login_required
+    def update_formdata(self):
+        numids = len(self.ids)
+        jcols = []
+        tablelist = []
+
+        # 1. dupset is inserted into BAY_DupsInProgress noting any that that need more info via HELPME flag in xkey col
+        # 2. Work through each HELPME adding new BAY_DupExtraKeys values and trying again
+        # 3. all HELME records gone, move on to full merge set of tables
+
+        # initialize self.status if not set: "needs keys" |  "ready" | "not prepped"
+        if not self.status:
+            self.update_status()
+
+        if self.status == "not prepped":
+            # nothing for this dupset, let's fill the BAY_DupsInProgress best we can
+            # then check it again
+            tablelist = self._listalltableswithid_numcolumns()
+            # tablelist = [{'tablename':'TRANSCRIPT_HEADER'}]
+            for t in tablelist:
+                table = t['tablename']
+                cols = self._colsfromtable(table)
+                extrakeys = self._extrakeys(table)
+                # extrakeys = [{'YR':2017, 'TRM':10}, {'YR':2017	, 'TRM':20}, {'YR':2017	, 'TRM':30}]
+                helpme = ""
+                if extrakeys:
+                    for ek in extrakeys:
+                        s = self._idsintable(table, ek)
+                        if s and max([l['cnt'] for l in s]) > 1:
+                            helpme = 'HELPME'                            
+                        # _buildformdetaillines(jdbname, table, s, ids, cols, ek)
+                    if s and helpme:
+                        self._insertintodiptable(table, helpme)
+                    elif s:
+                        for ek in extrakeys:
+                            self._insertintodiptable(table, ek) # store ek as dictionary
+                else:
+                    s = self._idsintable(table)
+                    helpme = ""
+                    if s and max([l['cnt'] for l in s]) > 1:
+                        helpme = "HELPME"
+                    if s:
+                        self._insertintodiptable(table, helpme)
+            self.update_status()
+
+        # now self.status should be either "needs keys" or  "ready
+        if self.status == "needs keys":
+            # not all ready, define some more keys
+            # just work with the notdone flagged ones
+            tablelist = self._allnotdonetablesfordupset()
+            self.formheaderinfo = {'dupset':self.dupset, 'goodid':self.goodid, 'ids':self.ids,
+                'notes':'this set needs keys, and is not ready'}   
+            # finish this here for HELPME flagged ones, probably filling default xkeys on this query
+
+        elif self.status == "ready":
+            # must all be OK, let's do it for real
+            tablelist = self._allkeyscombosforgooddupset()
+            self._loopoveralltables(tablelist)
+        else:
+            # very odd
+            print("error 423, eject, something is very wrong")        
 
 ###########################
 #the below is a manual test.
 if __name__ == '__main__':
     dupset = 30
     sumpin = Dupset(dupset)
-    print(sumpin.error)
-    print(sumpin.ids)
-    print(sumpin.dupset)
-    print(sumpin.jdbname)
+    # print(sumpin.error)
+    # print(sumpin.ids)
+    # print(sumpin.dupset)
+    # print(sumpin.jdbname)
     print(sumpin.goodid)
     print(sumpin.status)
     print(sumpin.update_status())
     # sumpin.build_table_list()
-    # print(sumpin.status)
-    print(sumpin.showdupset())
+    print(sumpin.status)
+    print(sumpin.update_formdata())
 
-    print(sumpin._listalltableswithid_numcolumns())
-    # print(sumpin._idsintable('NameMaster', ek=[]))
-    print(sumpin._idsintable('NameMaster'))
-    print(sumpin._extrakeys('NameMaster'))
-    # print(sumpin._rechecksummarycounts('NameMaster', ek))
-    print(sumpin._colsfromtable('NameMaster'))
-    # print(sumpin._rowsfromtable('NameMaster', id_num))
-    print(sumpin._basicdupsetinfo())
-    print(sumpin._checkstatusofdupinprogress())
-    print(sumpin._ignorefields('NameMaster'))
-    # print(sumpin._prepidsforformselection(dipid, table, extrakeys))
-    # print(sumpin._insertintodiptable(table, ek=""))
-    print(sumpin._insertintodiptable('NameMaster'))
-    print(sumpin._allnotdonetablesfordupset())
-    print(sumpin._allkeyscombosforgooddupset())
+    # print(sumpin._listalltableswithid_numcolumns())
+    # # print(sumpin._idsintable('NameMaster', ek=[]))
+    # print(sumpin._idsintable('NameMaster'))
+    # print(sumpin._extrakeys('NameMaster'))
+    # # print(sumpin._rechecksummarycounts('NameMaster', ek))
+    # print(sumpin._colsfromtable('NameMaster'))
+    # # print(sumpin._rowsfromtable('NameMaster', id_num))
+    # print(sumpin._basicdupsetinfo())
+    # print(sumpin._checkstatusofdupinprogress())
+    # print(sumpin._ignorefields('NameMaster'))
+    # # print(sumpin._prepidsforformselection(dipid, table, extrakeys))
+    # # print(sumpin._insertintodiptable(table, ek=""))
+    # print(sumpin._insertintodiptable('NameMaster'))
+    # print(sumpin._allnotdonetablesfordupset())
+    # print(sumpin._allkeyscombosforgooddupset())
