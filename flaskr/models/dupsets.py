@@ -107,7 +107,6 @@ class Dupset():
 
     def _extrakeys(self, table):
         # return the id_num count, and any other fields that are required for key2 generation
-        # db = pyodbc_db.MSSQL_DB_Conn()
         ek = ""
         r = []
         sql = """select xkeys from {}..BAY_DupExtraKeys
@@ -188,7 +187,7 @@ class Dupset():
         """return ignored fields in the table, or a constant list for now"""
         return ['approwversion','changeuser','changejob','changetime','user_name','job_time']
 
-    def _prepidsforformselection(self, dipid, table, extrakeys):
+    def _prepFormSelectionFromDupsInProgress(self, dipid, table, extrakeys):
         """returns 
         [{'table':'NameMaster','extrakeys':'yr_cde=2019,trm_cde=20',
         'field':'id_num',
@@ -331,10 +330,9 @@ class Dupset():
         newek = []
         if ek and type(ek) is dict:
             for e  in ek:
-                newek.append("{}={}".format(e, ek[e]))
-            ek = ', '.join(newek)
-
-        # db = pyodbc_db.MSSQL_DB_Conn()
+                newek.append("{}={}".format(e, ek[e])) # protect tics and insert them???
+            ek = ', '.join(newek) 
+            # ex: YR_CDE=2017, TRM_CDE=30
         sql = """insert into {}..BAY_DupsInProgress
         (dupset, tablename, xkeys, db) VALUES ({},'{}','{}','{}')
         """.format(self.dbname, self.dupset, table, ek, self.jdbname)
@@ -343,69 +341,93 @@ class Dupset():
     def _allnotdonetablesfordupset(self):
         ''' return list of only the tables with any partial keys that are in a started dupset, but HELPME flagged''' 
         # db = pyodbc_db.MSSQL_DB_Conn()
-        sql = """select * from {}..BAY_DupsInProgress where dupset = {} and xkeys = 'HELPME'
-        """.format(self.dbname, self.dupset)
+        sql = """select * from {}..BAY_DupsInProgress where dupset = {} 
+            and xkeys = 'HELPME'
+            """.format(self.dbname, self.dupset)
         return self.db.execute_s(sql)
 
     def _allkeyscombosforgooddupset(self):
         """ return list of only this dupset from prep table with good set of data, no HELPMEs """
-        # db = pyodbc_db.MSSQL_DB_Conn()
+        # remove that HELME someday
         sql = """select * from {}..BAY_DupsInProgress where dupset = {}
+            and xkeys not like '%HELPME%'
             """.format(self.dbname, self.dupset)
         return self.db.execute_s(sql)
+    
+    def _singleIDfromTableAndxKeys(self, id, table, xkeys=""):
+        if xkeys:
+            newxkeys = []
+            if "," in xkeys:
+                for a in xkeys.split(','):
+                    b,c = a.split("=")
+                    newxkeys.append("{}='{}'".format(b,c))
+            else:
+                b,c = xkeys.split("=")
+                newxkeys.append("{}='{}'".format(b,c))
+            xkeys = 'and '.join(newxkeys)
+        sql = """select * from {}..{} where id_num = {} {}
+            """.format(self.dbname, table, id, xkeys)
+        r = self.db.execute_s(sql)
+        return r
+
+
 
     def _loopoveralltables(self, tablelist):
+        # for jinja2, self.formheaderinfo has dupset, goodid, ids, and notes?? one per dupset
         self.formheaderinfo = {'dupset':self.dupset, 'goodid':self.goodid, 'ids':self.ids}        
         for t in tablelist:
             table = t['tablename']
+            ignorelist = self._ignorefields(table)
             dipid = t['ID']
-            extrakeys = ""
+            xkeys = ""
             if t['xkeys']:
-                extrakeys = t['xkeys']
-            else:
-                extrakeys = self._extrakeys(table)
-        
-        # missingkeys = []
-        # ignorelist = _ignorefields(table)
-        # maybe add some more to this with another table to join on (per table results)
-        # debugrows.append("comparing {} with the goodid of {}".format(self.ids, self.goodid))
-        
-        rowsj = [] # for jinja2, this is the layout of the html form
-        # each row is a dictionary with keys table, field, class (auto|needinput|same|ignore),
-        #  diabled(disable|), options [{selected(selected|),disbled(disabled|),showval, formval}]
-
-
-            # # is the goodid one of the ids returned?
-            # goodidins = goodid in [l['id_num'] for l in s]
-            # # return render_template('duplicate_cleanup/index.html', rows=[goodidins])
-            
-            # # . multi lines with a good id, and all the others, so show table for sure                        
-            # if len(s) > 1 and goodidins and len(s) == len(ids):
-            #     debugrows.append("table {} (1 goodid) with a {} count (show premium diff){}".format(table, len(s), ""))
-            
-            # # . multi lines with a good id, and one or more others, but not all of them
-            # elif len(s) > 1 and goodidins:
-            #     debugrows.append("table {} (1 goodid) with a {} count, missing one or more dup ids){}".format(table, len(s), ""))
-
-            # # . one lines with a not id, so it just has one update statement and no user intervention
-            # # show it only with the key columns that will be updated shown
-            # elif len(s) == 1 and not goodidins:
-            #     debugrows.append("table {} (0 goodid) 1 ID, {} (show, key update)".format(table, s[0]['id_num']))        
-            
-            # # . table has only one entry, for our goodid, no updates
-            # elif len(s) == 1 and goodidins:
-            #     debugrows.append("table {} (1 goodid) only ID, ignore/display?".format(table))        
-
-            # # . nothing to see here, really nothing with those keys in this table
-            # elif len(s) == 0:
-            #     debugrows.append("table {} is not interesting to us".format(table)) 
-
-            # # . BAD, nothing should get here, all cases should have been handled
+                xkeys = t['xkeys']
             # else:
-            #     debugrows.append("table {} had nutin - BAD BAAAD".format(table))
-            # #  now that the metadata is gathered, let's do something with each column
+            #     xkeys = self._extrakeys(table)
+            cids = []
+            for id in self.ids:
+                cids.append(self._singleIDfromTableAndxKeys(id, table, xkeys))
+
+            self.formbodyinfo.append([{'table':table, 'dipid': dipid, 'xkeys': xkeys,
+                'field':'len cids={}'.format(len(cids))}])
         
+
+        # for jinja2, self.formbodyinfo is the layout of the html form, one per dipid
+        # each row is a dictionary with keys: table, dipid, xkeys, field, class (auto|needinput|same|ignore),
+        #  diabled(disable|), options [{selected(selected|),disabled(disabled|),showval, formval}]
+
+
+        # is the goodid one of the ids returned?
+        # goodidins = self.goodid in [l['id_num'] for l in s]
+        # return render_template('duplicate_cleanup/index.html', rows=[goodidins])
             
+        # # . multi lines with a good id, and all the others, so show table for sure                        
+        # if len(s) > 1 and goodidins and len(s) == len(ids):
+        #     debugrows.append("table {} (1 goodid) with a {} count (show premium diff){}".format(table, len(s), ""))
+        
+        # # . multi lines with a good id, and one or more others, but not all of them
+        # elif len(s) > 1 and goodidins:
+        #     debugrows.append("table {} (1 goodid) with a {} count, missing one or more dup ids){}".format(table, len(s), ""))
+
+        # # . one lines with a not id, so it just has one update statement and no user intervention
+        # # show it only with the key columns that will be updated shown
+        # elif len(s) == 1 and not goodidins:
+        #     debugrows.append("table {} (0 goodid) 1 ID, {} (show, key update)".format(table, s[0]['id_num']))        
+        
+        # # . table has only one entry, for our goodid, no updates
+        # elif len(s) == 1 and goodidins:
+        #     debugrows.append("table {} (1 goodid) only ID, ignore/display?".format(table))        
+
+        # # . nothing to see here, really nothing with those keys in this table
+        # elif len(s) == 0:
+        #     debugrows.append("table {} is not interesting to us".format(table)) 
+
+        # # . BAD, nothing should get here, all cases should have been handled
+        # else:
+        #     debugrows.append("table {} had nutin - BAD BAAAD".format(table))
+        # #  now that the metadata is gathered, let's do something with each column
+    
+        
 
             
             # must pull table summaries first and loop over them, this takes forever without
@@ -466,7 +488,7 @@ class Dupset():
             #                 # thishtml += "{}{}{}\n".format(goodidmarker, uglysql[0][ttag], goodidmarker)
 
 
-            # rows = self._prepidsforformselection(dipid, table, extrakeys)???
+            # rows = self._prepFormSelectionFromDupsInProgress(dipid, table, extrakeys)???
 
 
 
@@ -520,10 +542,11 @@ class Dupset():
         if self.status == "needs keys":
             # not all ready, define some more keys
             # just work with the notdone flagged ones
-            tablelist = self._allnotdonetablesfordupset()
-            self.formheaderinfo = {'dupset':self.dupset, 'goodid':self.goodid, 'ids':self.ids,
-                'notes':'this set needs keys, and is not ready'}   
+            tablelist = self._allnotdonetablesfordupset() 
             # finish this here for HELPME flagged ones, probably filling default xkeys on this query
+            # stub for now, just drop HELPME  rows
+            tablelist = self._allkeyscombosforgooddupset()
+            self._loopoveralltables(tablelist)
 
         elif self.status == "ready":
             # must all be OK, let's do it for real
@@ -531,7 +554,9 @@ class Dupset():
             self._loopoveralltables(tablelist)
         else:
             # very odd
-            print("error 423, eject, something is very wrong")        
+            print("error 534, eject, something is very wrong")
+
+        # ok, self.formbodyinfo should be filled now, return anything?
 
 ###########################
 #the below is a manual test.
@@ -548,6 +573,8 @@ if __name__ == '__main__':
     # sumpin.build_table_list()
     print(sumpin.status)
     print(sumpin.update_formdata())
+    print(sumpin.formheaderinfo)
+    print(sumpin.formbodyinfo)
 
     # print(sumpin._listalltableswithid_numcolumns())
     # # print(sumpin._idsintable('NameMaster', ek=[]))
@@ -559,7 +586,7 @@ if __name__ == '__main__':
     # print(sumpin._basicdupsetinfo())
     # print(sumpin._checkstatusofdupinprogress())
     # print(sumpin._ignorefields('NameMaster'))
-    # # print(sumpin._prepidsforformselection(dipid, table, extrakeys))
+    # # print(sumpin._prepFormSelectionFromDupsInProgress(dipid, table, extrakeys))
     # # print(sumpin._insertintodiptable(table, ek=""))
     # print(sumpin._insertintodiptable('NameMaster'))
     # print(sumpin._allnotdonetablesfordupset())

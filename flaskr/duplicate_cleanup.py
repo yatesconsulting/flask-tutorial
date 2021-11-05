@@ -8,6 +8,7 @@ from flaskr.auth import login_required
 from flaskr.db import get_db
 from . import pyodbc_db
 from myflaskrsecrets import dbname ## mcn_connet for us
+from flaskr.models.dupsets import Dupset
 
 bp = Blueprint('duplicate_cleanup', __name__, url_prefix='/dups')    
 
@@ -40,7 +41,7 @@ def index():
     return render_template('duplicate_cleanup/index.html', rows=rows, links=links)
 
 @bp.route('/refreshdups', methods=('GET', 'POST'))
-# @login_required
+@login_required
 def refreshdups():
     # if request.method == 'GET':
     # form with database selections 
@@ -85,7 +86,7 @@ def refreshdups():
     if (db.execute_i_u_d(sql)):
         sql = """SELECT t.name AS procedure_name
         FROM mcn_connect.sys.procedures AS t
-        where t.name like '%BAY%{}'""".format(jdbname)
+        where t.name like 'BAY_sp_dup%{}'""".format(jdbname)
         # blah
         r = db.execute_s(sql)
         for a in r:
@@ -101,17 +102,6 @@ def refreshdups():
 @bp.route('/showlist') # , methods=('GET', 'POST'))
 @login_required
 def showlist():
-    # if request.method == 'POST':
-    #     dupset = request.form['dupset']
-    #     body = request.form['body']
-    #     error = None
-
-    #     if not dupset:
-    #         error = 'Exactly one set of dups must be selected.'
-
-    #     if error is not None:
-    #         flash(error)
-    #     else:
     db = pyodbc_db.MSSQL_DB_Conn()
     sql = """select distinct db from MCN_Connect..BAY_DupIDs"""
     r = db.execute_s(sql)
@@ -442,8 +432,13 @@ def _allkeyscombosforgooddupset(dupset):
 @bp.route('/showdupset/<int:dupset>', methods=('GET', 'POST'))
 @login_required
 def showdupset(dupset):
+    ans = Dupset(dupset)
+    ans.update_status()
+    ans.update_formdata()
+    return render_template('duplicate_cleanup/index.html', rows=ans.formbodyinfo)
+    
     dupids = _basicdupsetinfo(dbname, dupset)
-    # return render_template('duplicate_cleanup/index.html', rows=dupids)
+    
     jdbname = dupids[0]['db']
     goodid = dupids[0]['goodid']
     if not goodid:
