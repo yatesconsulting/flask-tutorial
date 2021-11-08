@@ -435,7 +435,7 @@ def showdupset(dupset):
     ans = Dupset(dupset)
     ans.update_status()
     ans.update_formdata()
-    return render_template('duplicate_cleanup/index.html', rows=ans.formbodyinfo)
+    return render_template('duplicate_cleanup/index.html', rows=[ans.formheaderinfo, ans.formbodyinfo])
     
     dupids = _basicdupsetinfo(dbname, dupset)
     
@@ -538,7 +538,7 @@ def showdupset(dupset):
     
     rowsj = [] # for jinja2, this is the layout of the html form
     # each row is a dictionary with keys table, field, class (auto|needinput|same|ignore),
-    #  diabled(disable|), options [{selected(selected|),disbled(disabled|),showval, formval}]
+    #  diabled(disable|), choosekeys(yes|), options [{selected(selected|),disbled(disabled|),showval, formval}]
     headerinfo = {'dupset':dupset, 'goodid':goodid, 'ids':ids}
 
     # return render_template('duplicate_cleanup/index.html', rows=tablelist)
@@ -679,46 +679,49 @@ def test():
 @bp.route('/test2')
 @login_required
 def test2():
+    #  guts json dump of all of them
+    sqlinfo = {'guts':"{234:['field3=T1.field3','duh=T2.duh']}",
+        234:"from NAME_TYPE_TABLE T0  join NAME_TYPE_TABLE T1 on T1.ID_NUM = 4357237 and blah=blah,s=s join NAME_TYPE_TABLE T2 on T2.ID_NUM = 4366909 and blah=blah,s=s where T0.ID_NUM = 436313 and blah=blah,s=s1<br />delete from NM where ID_NUM = 4357237 and blah=blah,s=s1<br />delete from NM where ID_NUM = 4366909 and blah=blah,s=s1"}
     headerinfo = {'dupset':29, 'goodid':4363131 , 'ids':[4363131, 4357237, 4366909]}
-    rowsj = [{'table':'NAME_TYPE_TABLE','field':'id_num','class':'auto','disabled':'disabled',
-    'xkeys':'blah=blah','choosekeys':'yes','dupxtrakey':234,
-    'options':[{'selected':'selected','showval':'4363131'},
-    {'showval':'4357237'},
-    {'showval':'4366909'}]},
+    rowsj = [{'table':'NAME_TYPE_TABLE','field':'id_num','class':'key',
+    'xkeys':'blah=blah,s=s','dipid':234,
+    'options':[{'selected':'selected','showval':'4363131','disabled':'disabled'},
+    {'showval':'4357237','disabled':'disabled'},
+    {'showval':'4366909','disabled':'disabled'}]},
     {'table':'NAME_TYPE_TABLE',
-    'xkeys':'blah=blah','choosekeys':'yes','dupxtrakey':234,
+    'xkeys':'blah=blah','dipid':234,
     'field':'field2','class':'auto',
     'options':[{'selected':'selected','showval':'B'},
-    {'showval':'NULL','formval':'T0.field2=T1.field2'},
-    {'showval':'None','formval':'T0.field2=T2.field2'}]},
+    {'showval':'NULL','formval':'T1'},
+    {'showval':'None','formval':'T2'}]},
     {'table':'NAME_TYPE_TABLE',
-    'xkeys':'blah=blah','choosekeys':'yes','dupxtrakey':234,
+    'xkeys':'blah=blah','dipid':234,
     'field':'field3','class':'auto',
     'options':[{},
-    {'selected':'selected','showval':'C','formval':'T0.field3=T1.field3'},
-    {'showval':'None','formval':'T0.field3=T2.field3'}]},
+    {'selected':'selected','showval':'C','formval':'T1'},
+    {'showval':'None','formval':'T2'}]},
     {'table':'NAME_TYPE_TABLE',
-    'xkeys':'blah=blah','choosekeys':'yes','dupxtrakey':234,
+    'xkeys':'blah=blah','dipid':234,
     'field':'field4','class':'ignore',
     'options':[{'selected':'selected','showval':'B'},
-    {'showval':'NULL','formval':'T0.field4=T1.field4'},
-    {'showval':'None','formval':'T0.field4=T2.field4'}]},
+    {'showval':'NULL','formval':'T1'},
+    {'showval':'None','formval':'T2'}]},
     {'table':'NAME_TYPE_TABLE',
-    'xkeys':'blah=blah','choosekeys':'yes','dupxtrakey':234,
+    'xkeys':'blah=blah','dipid':234,
     'field':'field5','class':'same',
     'options':[{'selected':'selected','showval':'B'},
-    {'showval':'B','formval':'T0.field5=T1.field5'},
-    {'showval':'B','formval':'T0.field5=T2.field5'}]}
+    {'showval':'B','formval':'T1'},
+    {'showval':'B','formval':'T2'}]}
     ,
     {'table':'NAME_TYPE_TABLE',
-    'xkeys':'blah=blah','choosekeys':'yes','dupxtrakey':234,
+    'xkeys':'blah=blah','dipid':234,
     'field':'field6','class':'needinput',
     'options':[{'showval':'B'},
-    {'showval':'C','formval':'T0.field5=T1.field5'},
-    {'showval':'D','formval':'T0.field5=T2.field5'}]}
+    {'showval':'C','formval':'T1'},
+    {'showval':'D','formval':'T2'}]}
 
     ]
-    return render_template('duplicate_cleanup/showdupsetdetail.html', rows=rowsj, headerinfo=headerinfo)
+    return render_template('duplicate_cleanup/showdupsetdetail.html', rows=rowsj, headerinfo=headerinfo, sqlinfo=sqlinfo)
 
 
 @bp.route('/test3')
@@ -726,41 +729,41 @@ def test2():
 def test3():
     headerinfo = {'dupset':29, 'goodid':4363131 , 'ids':[4363131, 4357237, 4366909]}
     rowsj = [{'table':'NAME_TYPE_TABLE','field':'id_num','class':'auto','disabled':'disabled',
-    'xkeys':'blah=blah','choosekeys':'yes','dupxtrakey':234,'disabled':'disabled',
+    'xkeys':'blah=blah','choosekeys':'yes','dipid':234,'disabled':'disabled',
     'options':[{'selected':'selected','showval':'4363131'},
     {'showval':'4357237'},
     {'showval':'4366909'}]},
     {'table':'NAME_TYPE_TABLE',
-    'xkeys':'blah=blah','choosekeys':'yes','dupxtrakey':234,
+    'xkeys':'blah=blah','choosekeys':'yes','dipid':234,
     'field':'field2','class':'auto',
     'options':[{'selected':'selected','showval':'B','disabled':'disabled'},
-    {'showval':'NULL','formval':'T0.field2=T1.field2','disabled':'disabled'},
-    {'showval':'None','formval':'T0.field2=T2.field2','disabled':'disabled'}]},
+    {'showval':'NULL','formval':'T1','disabled':'disabled'},
+    {'showval':'None','formval':'T2','disabled':'disabled'}]},
     {'table':'NAME_TYPE_TABLE',
-    'xkeys':'blah=blah','choosekeys':'yes','dupxtrakey':234,
+    'xkeys':'blah=blah','choosekeys':'yes','dipid':234,
     'field':'field3','class':'auto',
     'options':[{'disabled':'disabled'},
-    {'selected':'selected','showval':'C','formval':'T0.field3=T1.field3','disabled':'disabled'},
-    {'showval':'None','formval':'T0.field3=T2.field3','disabled':'disabled'}]},
+    {'selected':'selected','showval':'C','formval':'T1','disabled':'disabled'},
+    {'showval':'None','formval':'T2','disabled':'disabled'}]},
     {'table':'NAME_TYPE_TABLE',
-    'xkeys':'blah=blah','choosekeys':'yes','dupxtrakey':234,
+    'xkeys':'blah=blah','choosekeys':'yes','dipid':234,
     'field':'field4','class':'ignore',
     'options':[{'selected':'selected','showval':'B','disabled':'disabled'},
-    {'showval':'NULL','formval':'T0.field4=T1.field4','disabled':'disabled'},
-    {'showval':'None','formval':'T0.field4=T2.field4','disabled':'disabled'}]},
+    {'showval':'NULL','formval':'T1','disabled':'disabled'},
+    {'showval':'None','formval':'T2','disabled':'disabled'}]},
     {'table':'NAME_TYPE_TABLE',
-    'xkeys':'blah=blah','choosekeys':'yes','dupxtrakey':234,
+    'xkeys':'blah=blah','choosekeys':'yes','dipid':234,
     'field':'field5','class':'same',
     'options':[{'selected':'selected','showval':'B','disabled':'disabled'},
-    {'showval':'B','formval':'T0.field5=T1.field5','disabled':'disabled'},
-    {'showval':'B','formval':'T0.field5=T2.field5','disabled':'disabled'}]}
+    {'showval':'B','formval':'T1','disabled':'disabled'},
+    {'showval':'B','formval':'T2','disabled':'disabled'}]}
     ,
     {'table':'NAME_TYPE_TABLE',
-    'xkeys':'blah=blah','choosekeys':'yes','dupxtrakey':234,
+    'xkeys':'blah=blah','choosekeys':'yes','dipid':234,
     'field':'field6','class':'auto','disabled':'disabled',
     'options':[{'showval':'B','disabled':'disabled'},
-    {'showval':'C','formval':'T0.field5=T1.field5','disabled':'disabled'},
-    {'showval':'D','formval':'T0.field5=T2.field5','disabled':'disabled'}]}
+    {'showval':'C','formval':'T1','disabled':'disabled'},
+    {'showval':'D','formval':'T2','disabled':'disabled'}]}
 
     ]
     return render_template('duplicate_cleanup/showdupsetdetail.html', rows=rowsj, headerinfo=headerinfo)

@@ -366,7 +366,7 @@ class Dupset():
                 newxkeys.append("{}='{}'".format(b,c))
             xkeys = 'and '.join(newxkeys)
         sql = """select * from {}..{} where id_num = {} {}
-            """.format(self.dbname, table, id, xkeys)
+            """.format(self.jdbname, table, id, xkeys)
         r = self.db.execute_s(sql)
         return r
 
@@ -386,10 +386,11 @@ class Dupset():
             #     xkeys = self._extrakeys(table)
             cids = []
             for id in self.ids:
+                # one row appended for every id, even empty ones and >1 results(todo)
                 cids.append(self._singleIDfromTableAndxKeys(id, table, xkeys))
 
-            self.formbodyinfo.append([{'table':table, 'dipid': dipid, 'xkeys': xkeys,
-                'field':'len cids={}'.format(len(cids))}])
+            self.formbodyinfo.append([{'table':table, 'dipid': dipid, 'xkeys': xkeys, 
+                'lencids':'{}'.format(len(cids)), 'cids':'{}'.format( cids)}])
         
 
         # for jinja2, self.formbodyinfo is the layout of the html form, one per dipid

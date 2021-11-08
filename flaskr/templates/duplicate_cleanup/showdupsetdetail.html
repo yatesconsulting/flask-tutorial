@@ -5,6 +5,32 @@
 {% block content %}
 
 <script>
+    // do these couple global things on page load:
+    let a  = {{ sqlinfo.guts | safe }};
+    // console.log(a[234])
+  // console.log(b[234]);
+  // a = //JSON.parse({{ sqlinfo.guts }});
+  //  {234: "field3=T1.field3" };
+  // const myJSON = JSON.stringify(a);
+  // console.log(myJSON);
+  // {"222":["field3=T1.field3"]}
+  
+  // >>> import json
+  // >>> a = {'222':['blah=fdjsal','fsjkl=fdsjka']}
+  // >>> json.dumps(a)
+  // '{"222": ["blah=fdjsal", "fsjkl=fdsjka"]}'
+  
+  
+  // const myObj = { name: "John", age: 31, city: "New York" };
+  // const myJSON = JSON.stringify(myObj);
+  // localStorage.setItem("testJSON", myJSON);
+  
+  // // Retrieving data:
+  // let text = localStorage.getItem("testJSON");
+  // let obj = JSON.parse(text);
+  // document.getElementById("demo").innerHTML = obj.age;
+  
+
 function toggleClass(el) {
   var x = document.getElementsByClassName(el);
   var style = getComputedStyle(x[0]);
@@ -26,7 +52,7 @@ function displayClass(cl) {
   let els = [];    
   if (cl == "all"){
     // make el into els list and loop over the list every time
-    els =  ["same", "auto", "ignore"];
+    els =  ["same", "auto", "ignore", "sql", "key"];
   } else {
     // put the one value of el into the list
     els = [cl];
@@ -45,77 +71,216 @@ function displayClass(cl) {
     } 
   }
 }
+
+function selectFixSQLsets(elmnt) {
+    // let str = JSON.stringify(elmnt, null, 4); 
+    // document.getElementById("blah").innerHTML = elmnt.value; 
+    // document.getElementById("blah").innerHTML = a[arr[0]]
+    // window.alert("in selectFixSQLsets " + elmnt.id);
+    // console.log(5 + 6);
+  
+    // loop over all elements in a[arr[0]], replacing any that start with arr[1]= with the new value
+    // then join all of them together with ,'s and put them 
+  
+  
+    // all elements should have a splittable ID
+    // select options will be ###.field, other box under is ###.field.custom
+    //   where ### is the dipid (dup in process id)
+    // document.getElementById("mySelect").selectedIndex = "-1"; 
+  
+    let index = -1;
+    arr = elmnt.id.split(".")
+    let lenfield = arr[1].length; 
+    for (var i = 0; i < a[arr[0]].length; i++) {
+      val = a[arr[0]][i];
+      if (val.substring(0, lenfield) == arr[1]){
+         index = i;
+      }
+    }
+  
+  
+    let ival = ""
+    let selectboxid = arr[0] + "." + arr[1];
+    let customselectboxid = arr[0] + "." + arr[1] + ".custom";
+    // 1 if custom field and blank, then del SQL, clear the select box
+    if (elmnt.value == "" && arr[2]) {
+      // console.log(1)
+      if (index != -1) {
+        a[arr[0]].splice(index, 1)
+      }
+      document.getElementById(selectboxid).selectedIndex = -1;
+      
+    // 2 else if field blank, then del SQL, clear any custom val
+    } else if (elmnt.value == "") {
+      // console.log(2)
+      if (index != -1) {
+        a[arr[0]].splice(index, 1)
+      }
+    
+    // 3 else if custom then move option to Other and update/insert SQL
+    } else if (arr[2]) {
+      // console.log(3)
+        ival = arr[1] + "='" + elmnt.value + "'";
+        // var isitdisabled = document.getElementById(selectboxid).options.disabled
+        // if (!isitdisabled) {
+        //   document.getElementById(selectboxid).options.disabled = true;
+        //}
+        let lastchoice = document.getElementById(selectboxid).options.length - 1;
+        // this disable didn't work, and should not be needed
+        // document.getElementById(selectboxid).suspendEvent('change');
+        document.getElementById(selectboxid).selectedIndex = lastchoice;
+        // document.getElementById(selectboxid).resumeEvent('change');
+        // if (!isitdisabled) {
+        //   document.getElementById(selectboxid).options.disabled = false;
+        // }
+        if (index == -1) {
+          a[arr[0]].push(ival);
+        } else {
+          a[arr[0]][index] = ival;
+        }
+    
+    // 4 else not custom and has value => update/insert SQL and leave selection, blank custom
+    } else {
+      // console.log(4)
+        ival = arr[1] + "=" + elmnt.value + "." + arr[1]
+        document.getElementById(customselectboxid).value = "";
+        if (index == -1) {
+          a[arr[0]].push(ival);
+        } else {
+          a[arr[0]][index] = ival;
+        }
+    }
+  
+    document.getElementById("sql" + arr[0]).querySelector(".guts").innerHTML = a[arr[0]].join(", ");
+  
+  }
 </script>
-
 <style>
-
   select { min-width: 100px; }
   select option { font-size: 16pt; }
-  .same { display: none; background-color: greenyellow;}
-  .ignore { display: none; background-color: lightsalmon; }
-  .auto { display: none; background-color: lightskyblue; }
+  .same { display: none; background-color: #4da6ff;}
+  .ignore { display: none; background-color:  #66b3ff; }
+  .auto { display: none; background-color: #80bfff; }
+  .key { background-color: #99ccff; } 
+  .needinput { background-color: #ffffcc; } 
+  .sql { display: none; 
+    background-color: #ffb3ff; } 
+  .hsame { background-color: #4da6ff;}
+  .hignore { background-color:  #66b3ff; }
+  .hauto { background-color: #80bfff; }
+  .hkey { background-color: #99ccff; } 
+  .hneedinput { background-color: #ffffcc; } 
+  .hsql { background-color: #ffb3ff; } 
+select:required {
+  border-color: #800000;
+  border-width: 3px;
+}
+select:valid {
+  border: 1px solid black;
+}
+
+// not used, but just to complete the required suite
+select:required:invalid {
+  border-color: #c00000;
+}
 </style>
 
-<table border="0" cellpadding="0" cellspacing="0" width="100%">
-  <tr><td>
     <h2>goodid: {{ headerinfo.goodid }} with ids {{ headerinfo.ids }}</h2>
   </td>
 <td style="text-align:right;">
-    <a href="#" onclick='toggleClass("same")'>Toggle fields  with all the Same values</a><br />
-    <!-- we will not be adding class "disabledsame" as they should just never be turned off -->
-    <!-- not be adding class "needinput" yet, until  they update when complted -->
-
-    <a href="#" onclick='toggleClass("auto")'>Toggle autofilled fields</a><br />
-    <a href="#" onclick='toggleClass("ignore")'>Toggle ignorable fields</a><br />
-    <a href="#" onclick='displayClass("all")'>Show all fields</a>
+  <a href="#" onclick='toggleClass("auto")' class="hauto">Toggle autofilled fields</a><br />
+  <a href="#" onclick='toggleClass("ignore")' class="hignore">Toggle ignorable fields</a><br />
+  <a href="#" onclick='toggleClass("needinput")' class="hneedinput">Toggle fields that need input</a><br />
+  <a href="#" onclick='toggleClass("key")' class="hkey">Toggle fields with key values</a><br />
+  <a href="#" onclick='toggleClass("same")' class="hauto">Toggle fields  with all the Same values</a><br />
+  <a href="#" onclick='toggleClass("sql")' class="hsql">Toggle SQL fields</a><br />
+  <a href="#" onclick='displayClass("all")'>Show all fields</a>
 </td>
 </tr>
 </table>
 
 <form>  
 {% for row in rows %}
-<!-- maybe use https://css-tricks.com/how-to-section-your-html here for headers to stick better -->
 {% if loop.changed(row.table) %}
   <hr style="height:30px; color:red;" />
   <table border="0" cellpadding="0" cellspacing="0" width="100%">
     <tr>
       <td>
         <h2>--- <a name="{{ row.table }}">{{ row.table }}</a> ---</h2>
+        {% if row.xkeys %}
+        <h3>-- Extra Keys: {{ row.xkeys }} --</h3>
+        {% endif %}
+        <div class="sql {{ row.table }}sql" id="sql{{ row.dipid }}">
+          update T0 set <span class="guts">f1=T1.f1ish</span> 
+          {{ sqlinfo[row.dipid] | safe }}
+<!--           
+          from NAME_TYPE_TABLE T0<br />
+          join NAME_TYPE_TABLE T1<br />
+            on T1.id_num =4357237 and xkeys... <br />
+          join NAME_TYPE_TABLE T2<br />
+            on T2.id_num =4366909 and xkeys... <br />
+          where T0.id_num = 4363131 and xkeys...<br />
+          -- delete from NAME_TYPE_TABLEsql where ID_NUM = 4357237 and xeys<br />
+          -- delete from NAME_TYPE_TABLEsql where ID_NUM = 4366909 and xeys<br /> -->
+          </div>
+          
       </td>
       <td style="text-align:right;">
-        <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}same")'>Toggle {{ row.table }} fields  with all the Same values</a><br />
-          <!-- we will not be adding class "disabled*same" as they should just never be turned off -->
-          <!--  not be adding class "*needinput" yet, until  they update when complted -->
-          <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}auto")'>Toggle {{ row.table }}  autofilled fields</a><br />
-        <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}ignore")'>Toggle  {{ row.table }} ignorable fields</a><br />
-        <a href="#{{ row.table }}" onclick='displayClass("all")'>Show all {{ row.table }} fields</a>
+        <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}auto")' class="hauto">Toggle {{ row.table }} autofilled fields</a><br />
+        <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}ignore")' class="hignore">Toggle {{ row.table }} ignorable fields</a><br />
+        <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}needinput")' class="hneedinput">Toggle {{ row.table }} fields that need input</a><br />
+        <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}key")' class="hkey">Toggle {{ row.table }} fields with key values</a><br />
+        <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}same")' class="hauto">Toggle {{ row.table }} fields with all the Same values</a><br />
+        <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}sql")' class="hsql">Toggle {{ row.table }} SQL fields</a><br />
+        <a href="#{{ row.table }}" onclick='
+        displayClass("{{ row.table }}same");
+        displayClass("{{ row.table }}auto");
+        displayClass("{{ row.table }}ignore");
+        displayClass("{{ row.table }}sql");
+        displayClass("{{ row.table }}key")'>Show all {{ row.table }} fields</a>
       </td>
     </tr>
   </table>
   {% endif %}
   
-  <div class="{{ row.disabled }}{{ row.class }} {{ row.disabled }}{{ row.table}}{{ row.class }}" style="margin:10px;">
+<div class="{{ row.class }} {{ row.table}}{{ row.class }}" style="margin:10px;">
   
     <label for="{{ row.table }}.{{ row.field }}">{{ row.field }} </label>
   
     <br />
-  <select id="{{ row.table }}.{{ row.field }}.{{ row.xkeys }}" name="{{ row.table }}.{{ row.field }}" size="{{ headerinfo.ids|length }}" required  {{ row.disabled }}>
-
+  <select id="{{ row.dipid }}.{{ row.field }}" size="{{ headerinfo.ids|length +1 }}" required  {{ row.disabled }} onchange="selectFixSQLsets(this)">
   {% for option in row.options %}
   <option  value="{{option.formval}}" {{ option.selected }} {{ option.disabled }}>{{ option.showval }}</option>
   {% endfor %}
+  <option  value="" disabled>Other</option>
   </select>
 
-  {% if row.dupxtrakey %}
-   
-  <label for="ck{{ row.table }}.{{ row.field }}">Add {{ row.field }} to key list of {{row.table}}</label>
-    <input type="checkbox" id="ck{{ row.table }}.{{ row.field }}" name="dupkeyrow{{ row.dupxtrakey }}" value="{{ row.field }}">
+  {% if row.choosekeys %}
+  <label for="ck{{ row.table }}.{{ row.field }}">Add {{ row.field }} to key list of {{row.table}} {{ row.xkeys}}</label>
+    <input type="checkbox" name="dupkeyrow{{ row.dipid }}" value="{{ row.field }}">
+  {% else %}
+  <br />
+  <input type="text" id="{{ row.dipid }}.{{ row.field }}.custom" onchange="selectFixSQLsets(this)" /><input type="button" value="Use Other" />
+
   {% endif %}
   
 </div>
 
   
 {% endfor %}
+
+
   <input type="submit" value="Submit">
 </form>
+
+<script>
+
+
+  for (sqlnum in a) {
+    document.getElementById("sql" + sqlnum).querySelector(".guts").innerHTML = a[sqlnum];
+  }
+  
+  
+  </script>
+  
 {% endblock %}
