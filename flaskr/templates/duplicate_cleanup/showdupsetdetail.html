@@ -29,7 +29,7 @@
   // let text = localStorage.getItem("testJSON");
   // let obj = JSON.parse(text);
   // document.getElementById("demo").innerHTML = obj.age;
-  
+</script><script>
 
 function toggleClass(el) {
   var x = document.getElementsByClassName(el);
@@ -47,7 +47,7 @@ function toggleClass(el) {
     }
   } 
 }
-
+</script><script>
 function displayClass(cl) {
   let els = [];    
   if (cl == "all"){
@@ -71,7 +71,7 @@ function displayClass(cl) {
     } 
   }
 }
-
+</script><script>
 function selectFixSQLsets(elmnt) {
     // let str = JSON.stringify(elmnt, null, 4); 
     // document.getElementById("blah").innerHTML = elmnt.value; 
@@ -102,6 +102,7 @@ function selectFixSQLsets(elmnt) {
     let ival = ""
     let selectboxid = arr[0] + "." + arr[1];
     let customselectboxid = arr[0] + "." + arr[1] + ".custom";
+    // 4 ways a custom field might be manipulated
     // 1 if custom field and blank, then del SQL, clear the select box
     if (elmnt.value == "" && arr[2]) {
       // console.log(1)
@@ -120,7 +121,11 @@ function selectFixSQLsets(elmnt) {
     // 3 else if custom then move option to Other and update/insert SQL
     } else if (arr[2]) {
       // console.log(3)
+      if (elmnt.value == "getdate()"){
+        ival = arr[1] + "=getdate()";
+      } else {
         ival = arr[1] + "='" + elmnt.value + "'";
+      }
         // var isitdisabled = document.getElementById(selectboxid).options.disabled
         // if (!isitdisabled) {
         //   document.getElementById(selectboxid).options.disabled = true;
@@ -151,8 +156,11 @@ function selectFixSQLsets(elmnt) {
         }
     }
   
-    document.getElementById("sql" + arr[0]).querySelector(".guts").innerHTML = a[arr[0]].join(", ");
-  
+    if (a[arr[0]].length == 0) {
+      document.getElementById("sql" + arr[0]).querySelector(".guts").innerHTML = "-- nothing to update here ... ";
+    } else {
+      document.getElementById("sql" + arr[0]).querySelector(".guts").innerHTML = "update T0 set " + a[arr[0]].join(", ");
+    }
   }
 </script>
 <style>
@@ -201,7 +209,7 @@ select:required:invalid {
 
 <form>  
 {% for row in rows %}
-{% if loop.changed(row.table) %}
+{% if loop.changed(row.dipid) %}
   <hr style="height:30px; color:red;" />
   <table border="0" cellpadding="0" cellspacing="0" width="100%">
     <tr>
@@ -212,17 +220,8 @@ select:required:invalid {
         {% endif %}
         <div class="sql {{ row.table }}sql" id="sql{{ row.dipid }}">
           {{ sqlinfo["precheck" ~ row.dipid] | safe }}
-          update T0 set <span class="guts"></span> 
+          <span class="guts"></span> 
           {{ sqlinfo[row.dipid] | safe }}
-<!--           
-          from NAME_TYPE_TABLE T0<br />
-          join NAME_TYPE_TABLE T1<br />
-            on T1.id_num =4357237 and xkeys... <br />
-          join NAME_TYPE_TABLE T2<br />
-            on T2.id_num =4366909 and xkeys... <br />
-          where T0.id_num = 4363131 and xkeys...<br />
-          -- delete from NAME_TYPE_TABLEsql where ID_NUM = 4357237 and xeys<br />
-          -- delete from NAME_TYPE_TABLEsql where ID_NUM = 4366909 and xeys<br /> -->
           </div>
           
       </td>
@@ -251,7 +250,7 @@ select:required:invalid {
   {% for option in row.options %}
   <option value="{{option.formval}}" {{ option.selected }} {{ option.disabled }}>{{ option.showval }}</option>
   {% endfor %}
-  <option value="" disabled {% if row.customdisabled %}selected{% endif %}>Other</option>
+  <option value="" disabled {% if row.custom %}selected{% endif %}>Other</option>
   </select>
   <input type="text" id="{{ row.dipid }}.{{ row.field }}.custom" onchange="selectFixSQLsets(this)" value="{{ row.custom }}" {{ row.customdisabled }}/><input type="button" value="Use Other" />
 
@@ -274,7 +273,14 @@ select:required:invalid {
 
 <script>
 for (sqlnum in a) {
-    document.getElementById("sql" + sqlnum).querySelector(".guts").innerHTML = a[sqlnum];
+  // console.log(sqlnum)
+  t = document.getElementById("sql" + sqlnum).querySelector(".guts")
+  // if (!t) {  console.log("can't find t for " + sqlnum) }
+  if (a[sqlnum].length == 0) {
+    t.innerHTML = "-- nothing to update here ... ";
+  } else {
+    t.innerHTML = "update T0 set " + a[sqlnum];
+  }
 }
 </script>
   

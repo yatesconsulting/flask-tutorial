@@ -187,7 +187,7 @@ class Dupset():
 
     def _ignorefields(self, table):
         """return ignored fields in the table, or a constant list for now"""
-        return ['APPROWVERSION','CHANGEUSER','CHANGEJOB','CHANGETIME','USER_NAME','JOB_TIME']
+        return ['APPROWVERSION','CHANGEUSER','CHANGEJOB','CHANGETIME','USER_NAME','JOB_TIME','LAST_UPDATE','JOB_NAME']
 
     # def _prepFormSelectionFromDupsInProgress(self, dipid, table, extrakeys):
     #     """returns 
@@ -418,15 +418,26 @@ class Dupset():
                         # lockitdownfornewkeycreationonly = True
                         pass # but do something stern here eventually
 
+            axkeys = ""
+            if xkeys:
+                axkeys = ' and {}'.format(xkeys)
             if approwversions:
-                arvcs = ', '.join([str(element) for element in approwversions])   
-                self.sqlinfo["precheck{}".format(dipid)] = """select '{}' as table,
+                arvcs = ', '.join([str(int.from_bytes(element, 'big')) for element in approwversions]) 
+                gids = ', '.join([str(t) for t in T])
+                self.sqlinfo["precheck{}".format(dipid)] = """select '{}' as [table],
                     '{}' as xkeys,
-                    ID_NUM, count(*) as 'count should be about {}',
-                    approwversion, * from {}..{} 
-                    where ID_NUM in ({}) 
-                    and approwversion in ({})<br />
-                """.format(table, xkeys, len(self.ids), self.jdbname, table, idscs, arvcs)
+                    '{}' as 'GoodCount',
+                    ID_NUM,
+                    '{}' as allIDs,
+                    case when cast(approwversion as bigint) in ({})
+                    then 'GoodAppRowVersion'
+                    else 'BADAPPROWVERSION' end
+                    as AppRowCk
+                    from {}..{} 
+                    where ID_NUM in ({}) {}<br /><br />
+                """.format(table, xkeys, len(T), gids, arvcs, self.jdbname, table, idscs, axkeys)
+            else:
+                self.sqlinfo["precheck{}".format(dipid)] = "-- sorry, {} has no approwversion<br /><br />".format(table)
 
             # FOR TESTING:
             # self.formbodyinfo.append([{'table':table, 'dipid': dipid, 'xkeys': xkeys, 
@@ -458,9 +469,7 @@ class Dupset():
             #     others shown, emptys show ---
             #     allow custmo fields
             
-            axkeys = ""
-            if xkeys:
-                axkeys = ' and {}'.format(xkeys)
+            
 
             tjoins = []
             tdels = []
@@ -469,9 +478,9 @@ class Dupset():
                     tjoins.append("from {} T0 ".format(table))
                 else:
                     tjoins.append("join {} T{} on T{}.ID_NUM = {} {}".format(table, index, index, item, axkeys))
-                    tdels.append("delete from {} where ID_NUM = {} {}".format(table, item, axkeys))
+                    tdels.append("delete from {} where ID_NUM = {} {}<br />".format(table, item, axkeys))
                     # need to triple check this works with one bad id
-            tjoins.append("where T0.ID_NUM = {} {}".format(T[0], axkeys))
+            tjoins.append("where T0.ID_NUM = {} {}<br />".format(T[0], axkeys))
             self.sqlinfo[dipid] = "{}".format('<br />'.join(tjoins + tdels))
             # print('dipid={}, self.sqlinfo[dipid]={}'.format(dipid, self.sqlinfo[dipid]))
 
@@ -511,7 +520,7 @@ class Dupset():
                         options.append({'showval':cid[col]})
 
                 # for normal selections, not keyfinding
-                for i in range(1,len(options)):
+                for i in range(1, len(options)):
                     options[i]['formval'] = 'T{}'.format(i)
 
                 v = [o['showval'] for o in options]
@@ -520,20 +529,23 @@ class Dupset():
                     dupck.remove(None)
 
                 # if ignoring this column, then just put all values in, and default to first one   
-                # do the same thing if all values are None     
+                # do the same thing if all values are None
+                # if col.upper() == "USER_NAME":
+                #     myformbodyinfo['custom'] = 'BAYMerge'
+                #     # myformbodyinfo['customdi  sabled'] = 'disabled'
+                #     gutslist.append("USER_NAME='{}'".format(myformbodyinfo['custom']))
+                #     for i in range(len(options)):
+                #         options[i]['disabled'] = 'disabled'
+
+
                 if cl == 'ignore' or not dupck or (col.upper() == 'ID_NUM' and cids[0]):
                     options[0]['selected'] = 'selected'
                     # print('ignoring {}'.format(col))
-                    if col.upper() == 'ID_NUM':
-                        cl = 'key'
-                    else: #  not cl:  let's even overwrite ignore with auto
-                        cl  = 'auto'
+                    cl  = 'auto' # fix to key later if needed
 
                 elif col.upper() == 'ID_NUM' and not cids[0]:
                     # default to goodid using the 
                     myformbodyinfo['custom'] = self.goodid
-                    myformbodyinfo['customdisabled'] = 'disabled'
-                    cl = 'key'
                     gutslist.append("ID_NUM={}".format(self.goodid)) # ticless int
                 
                 # we need to find out if we can auto pick the selection
@@ -544,14 +556,15 @@ class Dupset():
                         cl = 'auto'
                         if i > 0:
                             gutslist.append('{}=T{}.{}'.format(col, i, col))
-
                     else:
                         cl = 'needinput'
                     
                 if col in xkeysdict.keys() or col.upper() == 'ID_NUM':
+                    # disable all options, but not the select or else the required style gets wonky
                     for i in range(len(options)):
                         options[i]['disabled'] = 'disabled'
                     cl = 'key'
+                    myformbodyinfo['customdisabled'] = 'disabled'
 
                 myformbodyinfo['class'] = cl
                 myformbodyinfo['options'] = options
