@@ -435,7 +435,10 @@ def showdupset(dupset):
     ans = Dupset(dupset)
     ans.update_status()
     ans.update_formdata()
-    return render_template('duplicate_cleanup/index.html', rows=[ans.formheaderinfo, ans.formbodyinfo])
+    return render_template('duplicate_cleanup/showdupsetdetail.html',
+        rows=ans.formbodyinfo, headerinfo=ans.formheaderinfo, sqlinfo=ans.sqlinfo)
+    return render_template('duplicate_cleanup/index.html',
+        rows=[ans.sqlinfo, ans.formheaderinfo, ans.formbodyinfo])
     
     dupids = _basicdupsetinfo(dbname, dupset)
     
@@ -522,10 +525,10 @@ def showdupset(dupset):
         dipid = t['ID']
         jdbname = t['db']
         extrakeys = []
-        if skipextrakeycheck:
-            extrakeys = t['xkeys']
-        else:
-            extrakeys = _extrakeys(jdbname, table, ids)
+        gutslist = [] # ['field3=T1.field3','f2=T2.f2']
+        sqlinfo = "" # from NAME_TYPE_TABLE T0  join NAME_TYPE_TABLE T1 on T1.ID_NUM = 4357237 and blah=blah,s=s join NAME_TYPE_TABLE T2 on T2.ID_NUM = 4366909 and blah=blah,s=s where T0.ID_NUM = 436313 and blah=blah,s=s1<br />delete from NM where ID_NUM = 4357237 and blah=blah,s=s1<br />delete from NM where ID_NUM = 4366909 and blah=blah,s=s1"
+        extrakeys = t['xkeys']
+        # extrakeys = _extrakeys(jdbname, table, ids)
         # return render_template('duplicate_cleanup/index.html', rows=t)
         rows = _prepidsforformselection(jdbname, dupset, dipid, ids, table, extrakeys)
         return render_template('duplicate_cleanup/index.html', rows=[ids,table,extrakeys,rows]) # jump out on first table to ck
@@ -680,8 +683,9 @@ def test():
 @login_required
 def test2():
     #  guts json dump of all of them
+    #################### HERE"S THE KEY
     sqlinfo = {'guts':"{234:['field3=T1.field3','duh=T2.duh']}",
-        234:"from NAME_TYPE_TABLE T0  join NAME_TYPE_TABLE T1 on T1.ID_NUM = 4357237 and blah=blah,s=s join NAME_TYPE_TABLE T2 on T2.ID_NUM = 4366909 and blah=blah,s=s where T0.ID_NUM = 436313 and blah=blah,s=s1<br />delete from NM where ID_NUM = 4357237 and blah=blah,s=s1<br />delete from NM where ID_NUM = 4366909 and blah=blah,s=s1"}
+        234:"ffffrom NAME_TYPE_TABLE T0  join NAME_TYPE_TABLE T1 on T1.ID_NUM = 4357237 and blah=blah,s=s join NAME_TYPE_TABLE T2 on T2.ID_NUM = 4366909 and blah=blah,s=s where T0.ID_NUM = 436313 and blah=blah,s=s1<br />delete from NM where ID_NUM = 4357237 and blah=blah,s=s1<br />delete from NM where ID_NUM = 4366909 and blah=blah,s=s1"}
     headerinfo = {'dupset':29, 'goodid':4363131 , 'ids':[4363131, 4357237, 4366909]}
     rowsj = [{'table':'NAME_TYPE_TABLE','field':'id_num','class':'key',
     'xkeys':'blah=blah,s=s','dipid':234,
@@ -718,8 +722,8 @@ def test2():
     'field':'field6','class':'needinput',
     'options':[{'showval':'B'},
     {'showval':'C','formval':'T1'},
-    {'showval':'D','formval':'T2'}]}
-
+    {'showval':'D','formval':'T2'}]
+    , 'custom':'blah' , 'customdisabled':'disabled' }
     ]
     return render_template('duplicate_cleanup/showdupsetdetail.html', rows=rowsj, headerinfo=headerinfo, sqlinfo=sqlinfo)
 
@@ -763,7 +767,7 @@ def test3():
     'field':'field6','class':'auto','disabled':'disabled',
     'options':[{'showval':'B','disabled':'disabled'},
     {'showval':'C','formval':'T1','disabled':'disabled'},
-    {'showval':'D','formval':'T2','disabled':'disabled'}]}
+    {'showval':'D','formval':'T2','disabled':'disabled'}], 'custom':'blah'}
 
     ]
     return render_template('duplicate_cleanup/showdupsetdetail.html', rows=rowsj, headerinfo=headerinfo)

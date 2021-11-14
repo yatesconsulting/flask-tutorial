@@ -17,6 +17,7 @@ class Dupset():
         self.status = "" # started, needs keys, ready, staged?, complete?
         self.formheaderinfo = {}
         self.formbodyinfo = []
+        self.sqlinfo = {}
 
         self.db = pyodbc_db.MSSQL_DB_Conn() # maybe this is the way to only use one db connection?
         sql = """select distinct db from {}..BAY_DupIDs""".format(dbname)
@@ -146,8 +147,9 @@ class Dupset():
         SELECT c.name AS column_name
         FROM {}.sys.tables AS t
         INNER JOIN {}.sys.columns c ON t.OBJECT_ID = c.OBJECT_ID
-        WHERE t.name = '{}'""".format(self.dbname, self.dbname, table)
+        WHERE t.name = '{}'""".format(self.jdbname, self.jdbname, table)
         r = self.db.execute_s(sql)
+        # print('sql={} and r={}'.format(sql, r))
         return [b['column_name'] for b in r]
 
     def _rowsfromtable(self, table, id_num):
@@ -185,145 +187,145 @@ class Dupset():
 
     def _ignorefields(self, table):
         """return ignored fields in the table, or a constant list for now"""
-        return ['approwversion','changeuser','changejob','changetime','user_name','job_time']
+        return ['APPROWVERSION','CHANGEUSER','CHANGEJOB','CHANGETIME','USER_NAME','JOB_TIME']
 
-    def _prepFormSelectionFromDupsInProgress(self, dipid, table, extrakeys):
-        """returns 
-        [{'table':'NameMaster','extrakeys':'yr_cde=2019,trm_cde=20',
-        'field':'id_num',
-        'missingkeys':'missingkeys',
-        'class':'auto','disabled':'disabled',
-        'options':[{'selected':'selected','showval':'4363131'},
-            {'showval':'4357237', 'diasbled':'disabled'},
-            {'showval':'4366909'}]
-        },
-        ...
-        table, ids, extrakeys: needed to uniquely identify one result set, of more than one row per ID, then we are seeking keys
-        field: each db field is a row in this result set
-        missingkeys: if table is missing keys, fields will be selectable instead of values
-        class: auto|needinput|same|ignore|lockedauto
-            auto = autoselected result based on trumps or nulls, selection not locked
-            needinput = nothing locked, need user input
-            ignore = in ignore column list, user can change, but may be overwritten, like job user
-            lockedauto = keyfield all options locked, but shown
-        options: of the selected set, expecting exactly one line for each id, unless key seeking
-            selected: selected or not present for ONE line selected value
-            showval: value shown to user
-            formval: value submitted to form
-        """
-        ignorefields = self._ignorefields(table)
+    # def _prepFormSelectionFromDupsInProgress(self, dipid, table, extrakeys):
+    #     """returns 
+    #     [{'table':'NameMaster','extrakeys':'yr_cde=2019,trm_cde=20',
+    #     'field':'id_num',
+    #     'missingkeys':'missingkeys',
+    #     'class':'auto','disabled':'disabled',
+    #     'options':[{'selected':'selected','showval':'4363131'},
+    #         {'showval':'4357237', 'diasbled':'disabled'},
+    #         {'showval':'4366909'}]
+    #     },
+    #     ...
+    #     table, ids, extrakeys: needed to uniquely identify one result set, of more than one row per ID, then we are seeking keys
+    #     field: each db field is a row in this result set
+    #     missingkeys: if table is missing keys, fields will be selectable instead of values
+    #     class: auto|needinput|same|ignore|lockedauto
+    #         auto = autoselected result based on trumps or nulls, selection not locked
+    #         needinput = nothing locked, need user input
+    #         ignore = in ignore column list, user can change, but may be overwritten, like job user
+    #         lockedauto = keyfield all options locked, but shown
+    #     options: of the selected set, expecting exactly one line for each id, unless key seeking
+    #         selected: selected or not present for ONE line selected value
+    #         showval: value shown to user
+    #         formval: value submitted to form
+    #     """
+    #     ignorefields = self._ignorefields(table)
 
-        rowj = []
-        wrk = []
-        ans = []
-        cols = self._colsfromtable(table) # a little redundant, maybe
-        missinggoodid = False # put one in for ID_NUM but everything else ---, if missing
-        morethanonerowperid = False # look for keys
+    #     rowj = []
+    #     wrk = []
+    #     ans = []
+    #     cols = self._colsfromtable(table) # a little redundant, maybe
+    #     missinggoodid = False # put one in for ID_NUM but everything else ---, if missing
+    #     morethanonerowperid = False # look for keys
 
-        xkeys = ""
-        keylist = []
-        if (extrakeys):
-            for ek in extrakeys:
-                for b in ek:
-                    if type(ek[b]) == int:
-                        keylist.append("{}={}".format(b, ek[b]))
-                    else:
-                        keylist.append("{}='{}'".format(b, ek[b]))
-            xkeys = " and {}".format(' and '.join(keylist))
-            keylist = []
+    #     xkeys = ""
+    #     keylist = []
+    #     if (extrakeys):
+    #         for ek in extrakeys:
+    #             for b in ek:
+    #                 if type(ek[b]) == int:
+    #                     keylist.append("{}={}".format(b, ek[b]))
+    #                 else:
+    #                     keylist.append("{}='{}'".format(b, ek[b]))
+    #         xkeys = " and {}".format(' and '.join(keylist))
+    #         keylist = []
 
-        sql = """select * from {}..{} where id_num in ({}) {}
-        order by ID_NUM""".format( self.jdbname, table, ",".join(map(str, self.ids)), xkeys)
-        rows = self.db.execute_s(sql) 
+    #     sql = """select * from {}..{} where id_num in ({}) {}
+    #     order by ID_NUM""".format( self.jdbname, table, ",".join(map(str, self.ids)), xkeys)
+    #     rows = self.db.execute_s(sql) 
 
-        # return rows
+    #     # return rows
 
-        # ok, let's sort lots of things out
-        # if there is no goodid, then we need to put the goodid in the id_num first row, but all other first rows will be "---"
-        # need to identify which row is the goodid, and put it(them?) first
-        #  so rebuild entire list in correct display order
-        # if there is more than one row for any id, then we need to only offer key selection
-        rowsordered = []
-        missinggoodid = not(self.goodid in [l['ID_NUM'] for l in rows])
-        idcounts = {}
-        for i in self.ids:
-            idcounts[i] = 0
+    #     # ok, let's sort lots of things out
+    #     # if there is no goodid, then we need to put the goodid in the id_num first row, but all other first rows will be "---"
+    #     # need to identify which row is the goodid, and put it(them?) first
+    #     #  so rebuild entire list in correct display order
+    #     # if there is more than one row for any id, then we need to only offer key selection
+    #     rowsordered = []
+    #     missinggoodid = not(self.goodid in [l['ID_NUM'] for l in rows])
+    #     idcounts = {}
+    #     for i in self.ids:
+    #         idcounts[i] = 0
         
-        for r in rows:
-            if r['ID_NUM']:
-                idcounts[r['ID_NUM']] += 1
-                if r['ID_NUM'] == self.goodid:
-                    rowsordered.append(r)
-                else:
-                    rowsordered.insert(0, r)        
-            else:
-                # nothing should ever make it here
-                pass
-        # if any idcounts > 1
-        morethanonerowperid = max([l for l in idcounts]) > 1
-        # idcounts = {}
+    #     for r in rows:
+    #         if r['ID_NUM']:
+    #             idcounts[r['ID_NUM']] += 1
+    #             if r['ID_NUM'] == self.goodid:
+    #                 rowsordered.append(r)
+    #             else:
+    #                 rowsordered.insert(0, r)        
+    #         else:
+    #             # nothing should ever make it here
+    #             pass
+    #     # if any idcounts > 1
+    #     morethanonerowperid = max([l for l in idcounts]) > 1
+    #     # idcounts = {}
 
-        # not sure if I need this
-        # if missinggoodid:
-        #     rowsordered.append({'ID_NUM':'---'})
+    #     # not sure if I need this
+    #     # if missinggoodid:
+    #     #     rowsordered.append({'ID_NUM':'---'})
 
-        # # if only one row, then all defaults revolve around it, don't check so many things later
-        # if len(rows) == 1:
-        #     if missinggoodid:
-        #         pass
+    #     # # if only one row, then all defaults revolve around it, don't check so many things later
+    #     # if len(rows) == 1:
+    #     #     if missinggoodid:
+    #     #         pass
 
-        # if no goodid, show a line of ---'s in it's place, what ID gets updated to goodid?
-
-
-        # if morethanonerowperid == True
-        #   we should only allow selection of keys to reduce sets down
-        #    so lock down key rows with disabled, but not other rows
-        #    lock down all options rows with disabled
-        #    normal "selection" routines? or just leave everything unchecked 
-        #   still hide same/ignore/auto rows
-
-        for col in cols:
-            wcol = []
-            styleclass = ""
-            if col in ignorefields:
-                styleclass = "ignore"
-            elif extrakeys and col in extrakeys[0].keys():
-                styleclass = "lockedauto"
-            elif col == "ID_NUM":
-                styleclass = "lockedauto"
-
-            # compare all the values for this col key:
-            if len(rows) == 1:
-                if missinggoodid:
-                    # make a row with a fake ID_NUM = id[0] to push into this set
-                    if col == "ID_NUM":
-                        # put id[0] on this value, and select it, and formvalue = ???
-                        pass
-                else:
-                    # make a form row with good ID and that's the only row, so, yeah
-                    pass
-            for r in rows:
-                if r[col] != "None":
-                    pass
-                    # trowval.append(r[col])
-
-            # auto = autoselected result based on trumps or nulls, selection not locked
-            # needinput = nothing locked, need user input
-            # compare all the values on this row for style=auto or needinput
-            return([missinggoodid, morethanonerowperid,table,col,rows])
+    #     # if no goodid, show a line of ---'s in it's place, what ID gets updated to goodid?
 
 
-            for r in range(len(rows)):
-                if rows[col]:
-                    wcol.append(rows[col])
+    #     # if morethanonerowperid == True
+    #     #   we should only allow selection of keys to reduce sets down
+    #     #    so lock down key rows with disabled, but not other rows
+    #     #    lock down all options rows with disabled
+    #     #    normal "selection" routines? or just leave everything unchecked 
+    #     #   still hide same/ignore/auto rows
 
-            # for r in rowsthathavegoodid:
-            #     if rows[col] and rows[col]
-            # for r in range(len(rows)):
-            # if r in rowsthathavegoodid:
-            #     continue
+    #     for col in cols:
+    #         wcol = []
+    #         styleclass = ""
+    #         if col in ignorefields:
+    #             styleclass = "auto"
+    #         elif extrakeys and col in extrakeys[0].keys():
+    #             styleclass = "lockedauto"
+    #         elif col == "ID_NUM":
+    #             styleclass = "lockedauto"
 
-        return ans
+    #         # compare all the values for this col key:
+    #         if len(rows) == 1:
+    #             if missinggoodid:
+    #                 # make a row with a fake ID_NUM = id[0] to push into this set
+    #                 if col == "ID_NUM":
+    #                     # put id[0] on this value, and select it, and formvalue = ???
+    #                     pass
+    #             else:
+    #                 # make a form row with good ID and that's the only row, so, yeah
+    #                 pass
+    #         for r in rows:
+    #             if r[col] != "None":
+    #                 pass
+    #                 # trowval.append(r[col])
+
+    #         # auto = autoselected result based on trumps or nulls, selection not locked
+    #         # needinput = nothing locked, need user input
+    #         # compare all the values on this row for style=auto or needinput
+    #         return([missinggoodid, morethanonerowperid,table,col,rows])
+
+
+    #         for r in range(len(rows)):
+    #             if rows[col]:
+    #                 wcol.append(rows[col])
+
+    #         # for r in rowsthathavegoodid:
+    #         #     if rows[col] and rows[col]
+    #         # for r in range(len(rows)):
+    #         # if r in rowsthathavegoodid:
+    #         #     continue
+
+    #     return ans
 
     def _insertintodiptable(self, table, ek=""):
         ''' insert into BAY_DupsInProgress'''
@@ -364,38 +366,208 @@ class Dupset():
             else:
                 b,c = xkeys.split("=")
                 newxkeys.append("{}='{}'".format(b,c))
-            xkeys = 'and '.join(newxkeys)
+            xkeys = ' and {}'.format(' and '.join(newxkeys))
         sql = """select * from {}..{} where id_num = {} {}
             """.format(self.jdbname, table, id, xkeys)
         r = self.db.execute_s(sql)
         return r
 
-
-
     def _loopoveralltables(self, tablelist):
         # for jinja2, self.formheaderinfo has dupset, goodid, ids, and notes?? one per dupset
-        self.formheaderinfo = {'dupset':self.dupset, 'goodid':self.goodid, 'ids':self.ids}        
+        self.formheaderinfo = {'dupset':self.dupset, 'goodid':self.goodid, 'ids':self.ids}  
+        idscs = ', '.join([str(element) for element in self.ids])
+        gutsdict = {}
+
         for t in tablelist:
             table = t['tablename']
+            cols = self._colsfromtable(table)
+            # print("cols = {}".format(cols))
             ignorelist = self._ignorefields(table)
+            # print("ignorelist: {}".format(ignorelist))
             dipid = t['ID']
-            xkeys = ""
+            xkeys = "" # YR_CDE=2020, TRM_CDE=30 form
+            xkeysdict = {}
+            gutslist = [] # ['field3=T1.field3','f2=T2.f2']
+            approwversions =[]
+            cids = []
+            
             if t['xkeys']:
                 xkeys = t['xkeys']
+                for t1 in xkeys.split(", "):
+                    k,v = t1.split('=')
+                    xkeysdict[k] = v
+                
+            # add a variable to handle this when doing HELPMEs
             # else:
             #     xkeys = self._extrakeys(table)
-            cids = []
-            for id in self.ids:
+            
+            T = []
+            # fv = [""] * len(self.ids) # form values for each line in options
+            # lockitdownfornewkeycreationonly = False
+            # popuate precheck self.sqlinfo if AAPROWVERSION is present
+            for index, id in enumerate(self.ids):
                 # one row appended for every id, even empty ones and >1 results(todo)
-                cids.append(self._singleIDfromTableAndxKeys(id, table, xkeys))
+                thisid = self._singleIDfromTableAndxKeys(id, table, xkeys)
+                cids.append(thisid)  #  = cids + thisid
+                if thisid and 'APPROWVERSION' in thisid[0]:
+                    for t in thisid:
+                        approwversions.append(t['APPROWVERSION'])
+                if thisid:
+                    T.append(thisid[0]['ID_NUM'])
+                    if len(thisid) > 1:
+                        # lockitdownfornewkeycreationonly = True
+                        pass # but do something stern here eventually
 
-            self.formbodyinfo.append([{'table':table, 'dipid': dipid, 'xkeys': xkeys, 
-                'lencids':'{}'.format(len(cids)), 'cids':'{}'.format( cids)}])
+            if approwversions:
+                arvcs = ', '.join([str(element) for element in approwversions])   
+                self.sqlinfo["precheck{}".format(dipid)] = """select '{}' as table,
+                    '{}' as xkeys,
+                    ID_NUM, count(*) as 'count should be about {}',
+                    approwversion, * from {}..{} 
+                    where ID_NUM in ({}) 
+                    and approwversion in ({})<br />
+                """.format(table, xkeys, len(self.ids), self.jdbname, table, idscs, arvcs)
+
+            # FOR TESTING:
+            # self.formbodyinfo.append([{'table':table, 'dipid': dipid, 'xkeys': xkeys, 
+            #     'cids':'{}'.format( cids)}])
+            # if the len cids and ids is different, then we must want to give options to
         
+            # prep the correct layout, maybe not needed
+            # prep = self._idsintable(table, xkeysdict)
+            # [{'id_num': 4359752, 'cnt': 1}, {'id_num': 4368418, 'cnt': 1}]
+            # print(max([l['cnt'] for l in s]) )
+            # cids
+            # [[{'ID_NUM': 4368418, 'SOUNDEX_CDE': None}], [{'ID_NUM': 4359752, 'SOUNDEX_CDE': None}]]
+
+            # 4 categories with len(cids) <= len(ids) and no id multi-line
+            # show all len(ids) rows, with --- on any missing ones
+            # 1. only bad IDs
+            #     T0 is first bad id with values
+            #     others are T1... with only value ones being assigned T's
+            #     update T0 set T0.ID=goodid ... via disabled custom field
+            #     custom fields available elsewhere, unlocked
+            # 2. only 1 ID, and it's bad
+            #     T0 is the bad id
+            #     update T0 set T0.ID_NUM=goodid ... via custom field
+            # 3. only 1 ID< and it's good
+            #     T0 is goodid, and only line showing
+            #     allow custom field lines, otherwise update is empty
+            # 4. GoodID and >=1 other IDs
+            #     T0 is goodid
+            #     others shown, emptys show ---
+            #     allow custmo fields
+            
+            axkeys = ""
+            if xkeys:
+                axkeys = ' and {}'.format(xkeys)
+
+            tjoins = []
+            tdels = []
+            for index, item in enumerate(T):
+                if index == 0:
+                    tjoins.append("from {} T0 ".format(table))
+                else:
+                    tjoins.append("join {} T{} on T{}.ID_NUM = {} {}".format(table, index, index, item, axkeys))
+                    tdels.append("delete from {} where ID_NUM = {} {}".format(table, item, axkeys))
+                    # need to triple check this works with one bad id
+            tjoins.append("where T0.ID_NUM = {} {}".format(T[0], axkeys))
+            self.sqlinfo[dipid] = "{}".format('<br />'.join(tjoins + tdels))
+            # print('dipid={}, self.sqlinfo[dipid]={}'.format(dipid, self.sqlinfo[dipid]))
+
+            # print("{} of {}  with max of a single id {} for table {}".format(len(prep),
+            #     len(self.ids), max([l['cnt'] for l in prep]), table))
+
+            # self.sqlinfo = {'guts':"{234:['field3=T1.field3','duh=T2.duh']}",
+            #         234:"ffffrom NAME_TYPE_TABLE T0  join NAME_TYPE_TABLE T1 on T1.ID_NUM = 4357237 and blah=blah,s=s join NAME_TYPE_TABLE T2 on T2.ID_NUM = 4366909 and blah=blah,s=s where T0.ID_NUM = 436313 and blah=blah,s=s1<br />delete from NM where ID_NUM = 4357237 and blah=blah,s=s1<br />delete from NM where ID_NUM = 4366909 and blah=blah,s=s1"}
+            #     headerinfo = {'dupset':29, 'goodid':4363131 , 'ids':[4363131, 4357237, 4366909]}
+            #  self.formbodyinfo =
+            # [{'table':'NAME_TYPE_TABLE','field':'id_num','class':'key',
+            #     'xkeys':'blah=blah,s=s','dipid':234,
+            #     'options':[{'selected':'selected','showval':'4363131','disabled':'disabled'},
+            #     {'showval':'4357237','disabled':'disabled'},
+            #     {'showval':'4366909','disabled':'disabled'}],
+            # , 'custom':'blah' , 'customdisabled':'disabled' }
+            #  -- for each field append one like this
+            for col in cols:
+                cl = ""
+                options= []
+                # option = {}
+                myformbodyinfo = {}
+                # vals = []
+                # val = ""
+
+                myformbodyinfo['table'] = table
+                myformbodyinfo['field'] = col
+                myformbodyinfo['xkeys'] = xkeys
+                myformbodyinfo['dipid'] = dipid
+
+                if col.upper() in ignorelist:
+                    cl = 'ignore'
+                
+                # initialize each option
+                for a in cids:
+                    for cid in a:
+                        options.append({'showval':cid[col]})
+
+                # for normal selections, not keyfinding
+                for i in range(1,len(options)):
+                    options[i]['formval'] = 'T{}'.format(i)
+
+                v = [o['showval'] for o in options]
+                dupck = list(set(v))
+                if None in dupck:
+                    dupck.remove(None)
+
+                # if ignoring this column, then just put all values in, and default to first one   
+                # do the same thing if all values are None     
+                if cl == 'ignore' or not dupck or (col.upper() == 'ID_NUM' and cids[0]):
+                    options[0]['selected'] = 'selected'
+                    # print('ignoring {}'.format(col))
+                    if col.upper() == 'ID_NUM':
+                        cl = 'key'
+                    else: #  not cl:  let's even overwrite ignore with auto
+                        cl  = 'auto'
+
+                elif col.upper() == 'ID_NUM' and not cids[0]:
+                    # default to goodid using the 
+                    myformbodyinfo['custom'] = self.goodid
+                    myformbodyinfo['customdisabled'] = 'disabled'
+                    cl = 'key'
+                    gutslist.append("ID_NUM={}".format(self.goodid)) # ticless int
+                
+                # we need to find out if we can auto pick the selection
+                else:
+                    if len(dupck) == 1:
+                        i = v.index(dupck[0])
+                        options[i]['selected'] = 'selected'
+                        cl = 'auto'
+                        if i > 0:
+                            gutslist.append('{}=T{}.{}'.format(col, i, col))
+
+                    else:
+                        cl = 'needinput'
+                    
+                if col in xkeysdict.keys() or col.upper() == 'ID_NUM':
+                    for i in range(len(options)):
+                        options[i]['disabled'] = 'disabled'
+                    cl = 'key'
+
+                myformbodyinfo['class'] = cl
+                myformbodyinfo['options'] = options
+                self.formbodyinfo.append(myformbodyinfo)
+            # include a guts list for every dipid, even if empty
+            gutsdict[dipid] = gutslist
+            # print('guts for {} was {}'.format(dipid, gutslist))
+        self.sqlinfo['guts'] = str(gutsdict) # probj json, not str "{234:['field3=T1.field3','duh=T2.duh']}"
+        # print("hey, myguts = {}".format(self.sqlinfo['guts']))
+        # print("self.formheaderinfo={}".format(self.formheaderinfo))
+        # print("self.formbodyinfo={}".format(self.formbodyinfo))
 
         # for jinja2, self.formbodyinfo is the layout of the html form, one per dipid
         # each row is a dictionary with keys: table, dipid, xkeys, field, class (auto|needinput|same|ignore),
         #  diabled(disable|), options [{selected(selected|),disabled(disabled|),showval, formval}]
+        #  , custom:(value|), customdisabled (diabled|)
 
 
         # is the goodid one of the ids returned?
@@ -543,8 +715,9 @@ class Dupset():
         if self.status == "needs keys":
             # not all ready, define some more keys
             # just work with the notdone flagged ones
-            tablelist = self._allnotdonetablesfordupset() 
+            # tablelist = self._allnotdonetablesfordupset() 
             # finish this here for HELPME flagged ones, probably filling default xkeys on this query
+            
             # stub for now, just drop HELPME  rows
             tablelist = self._allkeyscombosforgooddupset()
             self._loopoveralltables(tablelist)
@@ -562,20 +735,24 @@ class Dupset():
 ###########################
 #the below is a manual test.
 if __name__ == '__main__':
-    dupset = 30
+    dupset = 83
     sumpin = Dupset(dupset)
     # print(sumpin.error)
     # print(sumpin.ids)
     # print(sumpin.dupset)
     # print(sumpin.jdbname)
-    print(sumpin.goodid)
-    print(sumpin.status)
-    print(sumpin.update_status())
+    # print(sumpin.goodid)
+    # print(sumpin.status)
+    # print(sumpin.update_status())
     # sumpin.build_table_list()
-    print(sumpin.status)
-    print(sumpin.update_formdata())
-    print(sumpin.formheaderinfo)
-    print(sumpin.formbodyinfo)
+    # print(sumpin.status)
+    sumpin.update_formdata()
+    # print(sumpin._idsintable('NameMaster'))
+    # [{'id_num': 4359752, 'cnt': 1}, {'id_num': 4368418, 'cnt': 1}]
+    # print(max([l['cnt'] for l in s]) )
+
+    # print(sumpin.formheaderinfo)
+    # print(sumpin.formbodyinfo)
 
     # print(sumpin._listalltableswithid_numcolumns())
     # # print(sumpin._idsintable('NameMaster', ek=[]))

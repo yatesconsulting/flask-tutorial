@@ -52,7 +52,7 @@ function displayClass(cl) {
   let els = [];    
   if (cl == "all"){
     // make el into els list and loop over the list every time
-    els =  ["same", "auto", "ignore", "sql", "key"];
+    els =  ["auto", "sql", "key"];
   } else {
     // put the one value of el into the list
     els = [cl];
@@ -83,10 +83,10 @@ function selectFixSQLsets(elmnt) {
     // then join all of them together with ,'s and put them 
   
   
-    // all elements should have a splittable ID
+    // all elements should have a . splittable ID
     // select options will be ###.field, other box under is ###.field.custom
     //   where ### is the dipid (dup in process id)
-    // document.getElementById("mySelect").selectedIndex = "-1"; 
+    // document.getElementById("mySelect").selectedIndex = "-1";  // clears selected options
   
     let index = -1;
     arr = elmnt.id.split(".")
@@ -158,17 +158,17 @@ function selectFixSQLsets(elmnt) {
 <style>
   select { min-width: 100px; }
   select option { font-size: 16pt; }
-  .same { display: none; background-color: #4da6ff;}
-  .ignore { display: none; background-color:  #66b3ff; }
+  /* .same { display: none; background-color: #4da6ff;} */
+  /* .ignore { display: none; background-color:  #66b3ff; } */
   .auto { display: none; background-color: #80bfff; }
-  .key { background-color: #99ccff; } 
+  .key { background-color: #adff99; } 
   .needinput { background-color: #ffffcc; } 
   .sql { display: none; 
     background-color: #ffb3ff; } 
-  .hsame { background-color: #4da6ff;}
-  .hignore { background-color:  #66b3ff; }
+  /* .hsame { background-color: #4da6ff;} */
+  /* .hignore { background-color:  #66b3ff; } */
   .hauto { background-color: #80bfff; }
-  .hkey { background-color: #99ccff; } 
+  .hkey { background-color: #adff99; } 
   .hneedinput { background-color: #ffffcc; } 
   .hsql { background-color: #ffb3ff; } 
 select:required {
@@ -189,10 +189,10 @@ select:required:invalid {
   </td>
 <td style="text-align:right;">
   <a href="#" onclick='toggleClass("auto")' class="hauto">Toggle autofilled fields</a><br />
-  <a href="#" onclick='toggleClass("ignore")' class="hignore">Toggle ignorable fields</a><br />
+  <!-- <a href="#" onclick='toggleClass("ignore")' class="hignore">Toggle ignorable fields</a><br /> -->
   <a href="#" onclick='toggleClass("needinput")' class="hneedinput">Toggle fields that need input</a><br />
   <a href="#" onclick='toggleClass("key")' class="hkey">Toggle fields with key values</a><br />
-  <a href="#" onclick='toggleClass("same")' class="hauto">Toggle fields  with all the Same values</a><br />
+  <!-- <a href="#" onclick='toggleClass("same")' class="hauto">Toggle fields  with all the Same values</a><br /> -->
   <a href="#" onclick='toggleClass("sql")' class="hsql">Toggle SQL fields</a><br />
   <a href="#" onclick='displayClass("all")'>Show all fields</a>
 </td>
@@ -211,7 +211,8 @@ select:required:invalid {
         <h3>-- Extra Keys: {{ row.xkeys }} --</h3>
         {% endif %}
         <div class="sql {{ row.table }}sql" id="sql{{ row.dipid }}">
-          update T0 set <span class="guts">f1=T1.f1ish</span> 
+          {{ sqlinfo["precheck" ~ row.dipid] | safe }}
+          update T0 set <span class="guts"></span> 
           {{ sqlinfo[row.dipid] | safe }}
 <!--           
           from NAME_TYPE_TABLE T0<br />
@@ -227,15 +228,13 @@ select:required:invalid {
       </td>
       <td style="text-align:right;">
         <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}auto")' class="hauto">Toggle {{ row.table }} autofilled fields</a><br />
-        <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}ignore")' class="hignore">Toggle {{ row.table }} ignorable fields</a><br />
+        <!-- <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}ignore")' class="hignore">Toggle {{ row.table }} ignorable fields</a><br /> -->
         <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}needinput")' class="hneedinput">Toggle {{ row.table }} fields that need input</a><br />
         <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}key")' class="hkey">Toggle {{ row.table }} fields with key values</a><br />
-        <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}same")' class="hauto">Toggle {{ row.table }} fields with all the Same values</a><br />
+        <!-- <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}same")' class="hauto">Toggle {{ row.table }} fields with all the Same values</a><br /> -->
         <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}sql")' class="hsql">Toggle {{ row.table }} SQL fields</a><br />
         <a href="#{{ row.table }}" onclick='
-        displayClass("{{ row.table }}same");
         displayClass("{{ row.table }}auto");
-        displayClass("{{ row.table }}ignore");
         displayClass("{{ row.table }}sql");
         displayClass("{{ row.table }}key")'>Show all {{ row.table }} fields</a>
       </td>
@@ -250,17 +249,17 @@ select:required:invalid {
     <br />
   <select id="{{ row.dipid }}.{{ row.field }}" size="{{ headerinfo.ids|length +1 }}" required  {{ row.disabled }} onchange="selectFixSQLsets(this)">
   {% for option in row.options %}
-  <option  value="{{option.formval}}" {{ option.selected }} {{ option.disabled }}>{{ option.showval }}</option>
+  <option value="{{option.formval}}" {{ option.selected }} {{ option.disabled }}>{{ option.showval }}</option>
   {% endfor %}
-  <option  value="" disabled>Other</option>
+  <option value="" disabled {% if row.customdisabled %}selected{% endif %}>Other</option>
   </select>
+  <input type="text" id="{{ row.dipid }}.{{ row.field }}.custom" onchange="selectFixSQLsets(this)" value="{{ row.custom }}" {{ row.customdisabled }}/><input type="button" value="Use Other" />
 
   {% if row.choosekeys %}
   <label for="ck{{ row.table }}.{{ row.field }}">Add {{ row.field }} to key list of {{row.table}} {{ row.xkeys}}</label>
     <input type="checkbox" name="dupkeyrow{{ row.dipid }}" value="{{ row.field }}">
   {% else %}
   <br />
-  <input type="text" id="{{ row.dipid }}.{{ row.field }}.custom" onchange="selectFixSQLsets(this)" /><input type="button" value="Use Other" />
 
   {% endif %}
   
@@ -274,13 +273,9 @@ select:required:invalid {
 </form>
 
 <script>
-
-
-  for (sqlnum in a) {
+for (sqlnum in a) {
     document.getElementById("sql" + sqlnum).querySelector(".guts").innerHTML = a[sqlnum];
-  }
-  
-  
-  </script>
+}
+</script>
   
 {% endblock %}
