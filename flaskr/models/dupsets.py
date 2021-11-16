@@ -1,4 +1,5 @@
 #  this might only be needed when running from the command line, testing
+from os import replace
 import sys
 sys.path.insert(0, r'C:/Users/bryany/Desktop/GitHub/flask-tutorial/flaskr') # required for from flaskr.models.... import
 sys.path.insert(0, r'C:/Users/bryany/Desktop/GitHub/flask-tutorial') # required for ?import?
@@ -84,8 +85,9 @@ class Dupset():
         return self.status
     
     def _listalltableswithid_numcolumns(self):
-        # db = pyodbc_db.MSSQL_DB_Conn()
-        sql = "SELECT * from {}..BAY_DupExtraKeys where tablename = 'ITEMS'".format(self.dbname)
+        # ID	tablename	xkeys	ID_NUM
+        # 827	ITEMS	GROUP_NUMBER, ACTION_CODE	ID_NUMBER
+        sql = "SELECT * from {}..BAY_DupExtraKeys".format(self.dbname)
         return self.db.execute_s(sql)
 
     def _idsintable(self, table, ek=[]):
@@ -111,7 +113,7 @@ class Dupset():
         # return sql
         return self.db.execute_s(sql)
 
-    def _extrakeys(self, table):
+    def _dupextrakeysuniqvaluekeys(self, table):
         # return the id_num count, and any other fields that are required for key2 generation
         r = []
         sql = """select xkeys from {}..BAY_DupExtraKeys
@@ -120,7 +122,8 @@ class Dupset():
         extrakeys = self.db.execute_s(sql)
         if extrakeys and extrakeys[0]['xkeys']:
             sql = """select distinct {} from {}..{} where {} in ({})
-            """.format(extrakeys[0]['xkeys'], self.jdbname, self._table, self._id_num, ",".join(map(str, self.ids)))
+                """.format(extrakeys[0]['xkeys'], self.jdbname, self._table, self._id_num, 
+                ",".join(map(str, self.ids)))
             r = self.db.execute_s(sql)
             return r
         return []
@@ -203,8 +206,8 @@ class Dupset():
                     newek.append("{}=''{}''".format(e, ek[e])) # protect tics and insert them???
                 else:
                     newek.append("isnull({},'''') = ''''".format(e))
-            ek = ', '.join(newek) 
-            # ex: YR_CDE=2017, TRM_CDE=30
+            ek = ' and '.join(newek) 
+            # ex: YR_CDE='2017' and TRM_CDE='30'
         sql = """insert into {}..BAY_DupsInProgress
         (dupset, tablename, xkeys, db) VALUES ({},'{}','{}','{}')
         """.format(self.dbname, self.dupset, self._table, ek, self.jdbname)
@@ -227,18 +230,11 @@ class Dupset():
         return self.db.execute_s(sql)
     
     def _singleIDfromTableAndxKeys(self, id, table, xkeys=""):
+        axkeys = ""
         if xkeys:
-            newxkeys = []
-            if "," in xkeys:
-                for a in xkeys.split(','):
-                    b,c = a.split("=") # DICTIONARY UPGRADE REQUIRED
-                    newxkeys.append("{}='{}'".format(b,c))
-            else:
-                b,c = xkeys.split("=")
-                newxkeys.append("{}='{}'".format(b,c))
-            xkeys = ' and {}'.format(' and '.join(newxkeys))
+            axkeys = ' and {}'.format(xkeys)
         sql = """select * from {}..{} where {} = {} {}
-            """.format(self.jdbname, table, self._id_num, id, xkeys)
+            """.format(self.jdbname, table, self._id_num, id, axkeys)
         r = self.db.execute_s(sql)
         return r
 
@@ -262,21 +258,18 @@ class Dupset():
             ignorelist = self._ignorefields(table)
             # print("ignorelist: {}".format(ignorelist))
             dipid = t['ID']
-            xkeys = "" # YR_CDE=2020, TRM_CDE=30 form
-            xkeysdict = {}
+            xkeys = "" # YR_CDE=2020 and TRM_CDE=30 form
+            # xkeysdict = {}
             gutslist = [] # ['field3=T1.field3','f2=T2.f2']
             approwversions =[]
             cids = []
             
             if t['xkeys']:
                 xkeys = t['xkeys']
-                for t1 in xkeys.split(", "):
-                    k,v = t1.split('=')
-                    xkeysdict[k] = v
                 
             # add a variable to handle this when doing HELPMEs
             # else:
-            #     xkeys = self._extrakeys(table)
+            #     xkeys = self._dupextrakeysuniqvaluekeys(table)
             
             T = []
             # fv = [""] * len(self.ids) # form values for each line in options
@@ -312,7 +305,7 @@ class Dupset():
                     as AppRowCk
                     from {}..{} 
                     where {} in ({}) {}<br /><br />
-                """.format(table, xkeys, len(T), self._id_num, gids, arvcs, self.jdbname, table, self._id_num, idscs, axkeys)
+                """.format(table, xkeys.replace("'","''"), len(T), self._id_num, gids, arvcs, self.jdbname, table, self._id_num, idscs, axkeys)
             else:
                 self.sqlinfo["precheck{}".format(dipid)] = "-- sorry, {} has no approwversion<br /><br />".format(table)
 
@@ -349,10 +342,10 @@ class Dupset():
                 if index == 0:
                     tjoins.append("from {} T0 ".format(table))
                 else:
-                    tjoins.append("join {} T{} on T{}.ID_NUM = {} {}".format(table, index, index, item, axkeys))
-                    tdels.append("delete from {} where ID_NUM = {} {}<br />".format(table, item, axkeys))
+                    tjoins.append("join {} T{} on T{}.{} = {} {}".format(table, index, index, self._id_num, item, axkeys))
+                    tdels.append("delete from {} where {} = {} {}<br />".format(table, self._id_num, item, axkeys))
                     # need to triple check this works with one bad id
-            tjoins.append("where T0.ID_NUM = {} {}<br />".format(T[0], axkeys))
+            tjoins.append("where T0.{} = {} {}<br />".format(self._id_num, T[0], axkeys))
             self.sqlinfo[dipid] = "{}".format('<br />'.join(tjoins + tdels))
 
             # self.sqlinfo = {'guts':"{234:['field3=T1.field3','duh=T2.duh']}",
@@ -422,8 +415,9 @@ class Dupset():
                     else:
                         cl = 'needinput'
                     
-                if col in xkeysdict.keys() or col.upper() == self._id_num.upper():
+                if col.upper() in xkeys.upper() or col.upper() == self._id_num.upper():
                     # disable all options, but not the select or else the required style gets wonky
+                    # col in xkeys is a little sloppy, but should be fine, searching field name in SQL
                     for i in range(len(options)):
                         options[i]['disabled'] = 'disabled'
                     cl = 'key'
@@ -452,7 +446,7 @@ class Dupset():
 
         # 1. dupset is inserted into BAY_DupsInProgress noting any that that need more info via HELPME flag in xkey col
         # 2. Work through each HELPME adding new BAY_DupExtraKeys values and trying again
-        # 3. all HELME records gone, move on to full merge set of tables
+        # 3. all HELPME records gone, move on to full merge set of tables
 
         # initialize self.status if not set: "needs keys" |  "ready" | "not prepped"
         if not self.status:
@@ -468,13 +462,13 @@ class Dupset():
                 self._id_num = t['ID_NUM']  # 'id_num' ok here
                 table = t['tablename']
                 cols = self._colsfromtable(table) # prob redunant from self.db.columns ?
-                extrakeys = self._extrakeys(table)
+                extrakeys = self._dupextrakeysuniqvaluekeys(table)
                 # extrakeys = [{'YR':2017, 'TRM':10}, {'YR':2017, 'TRM':20}, {'YR':2017, 'TRM':30}]
                 helpme = ""
                 if extrakeys:
                     for ek in extrakeys:
                         s = self._idsintable(table, ek)
-                        print("ek={} s={}".format(ek, s))
+                        # print("ek={} s={}".format(ek, s))
                         if s and max([l['cnt'] for l in s]) > 1:
                             helpme = 'HELPME'                            
                         # _buildformdetaillines(jdbname, table, s, ids, cols, ek)
@@ -538,7 +532,7 @@ if __name__ == '__main__':
     # print(sumpin._listalltableswithid_numcolumns())
     # # print(sumpin._idsintable('NameMaster', ek=[]))
     # print(sumpin._idsintable('NameMaster'))
-    # print(sumpin._extrakeys('NameMaster'))
+    # print(sumpin._dupextrakeysuniqvaluekeys('NameMaster'))
     # # print(sumpin._rechecksummarycounts('NameMaster', ek))
     # print(sumpin._colsfromtable('NameMaster'))
     # # print(sumpin._rowsfromtable('NameMaster', id_num))

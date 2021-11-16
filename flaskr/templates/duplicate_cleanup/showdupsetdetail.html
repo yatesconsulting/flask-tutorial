@@ -214,11 +214,21 @@ select:required:invalid {
   <table border="0" cellpadding="0" cellspacing="0" width="100%">
     <tr>
       <td>
-        <h2>--- <a name="{{ row.table }}">{{ row.table }}</a> ---</h2>
+        <h2>--- <a name="{{ row.dipid }}">{{ row.table }}</a> ---</h2>
         {% if row.xkeys %}
         <h3>-- Extra Keys: {{ row.xkeys }} --</h3>
         {% endif %}
-        <div class="sql {{ row.table }}sql" id="sql{{ row.dipid }}">
+        <h3>-- DIPid {{ row.dipid }}</h3>
+        <label for="shuffle{{ row.dipid }}">Shuffle {{ row.dipid }} instead, on field</label>
+        <select name="shuffle{{ row.dipid }}" id="shuffle{{ row.dipid }}">
+        <option value=""></option>
+        <option value="">cols</option>
+        <option value="">from</option>
+        <option value="">table</option>
+        <option value="">somehow</option>
+        </select><br />
+      
+        <div class="sql {{ row.dipid }}sql" id="sql{{ row.dipid }}">
           {{ sqlinfo["precheck" ~ row.dipid] | safe }}
           <span class="guts"></span> 
           {{ sqlinfo[row.dipid] | safe }}
@@ -226,24 +236,24 @@ select:required:invalid {
           
       </td>
       <td style="text-align:right;">
-        <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}auto")' class="hauto">Toggle {{ row.table }} autofilled fields</a><br />
-        <!-- <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}ignore")' class="hignore">Toggle {{ row.table }} ignorable fields</a><br /> -->
-        <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}needinput")' class="hneedinput">Toggle {{ row.table }} fields that need input</a><br />
-        <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}key")' class="hkey">Toggle {{ row.table }} fields with key values</a><br />
-        <!-- <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}same")' class="hauto">Toggle {{ row.table }} fields with all the Same values</a><br /> -->
-        <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}sql")' class="hsql">Toggle {{ row.table }} SQL fields</a><br />
-        <a href="#{{ row.table }}" onclick='
-        displayClass("{{ row.table }}auto");
-        displayClass("{{ row.table }}sql");
-        displayClass("{{ row.table }}key")'>Show all {{ row.table }} fields</a>
+        <a href="#{{ row.dipid }}" onclick='toggleClass("{{ row.dipid }}auto")' class="hauto">Toggle {{ row.dipid }} autofilled fields</a><br />
+        <!-- <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}ignore")' class="hignore">Toggle {{ row.dipid }} ignorable fields</a><br /> -->
+        <a href="#{{ row.dipid }}" onclick='toggleClass("{{ row.dipid }}needinput")' class="hneedinput">Toggle {{ row.dipid }} fields that need input</a><br />
+        <a href="#{{ row.dipid }}" onclick='toggleClass("{{ row.dipid }}key")' class="hkey">Toggle {{ row.dipid }} key values</a><br />
+        <!-- <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}same")' class="hauto">Toggle {{ row.dipid }} fields with all the Same values</a><br /> -->
+        <a href="#{{ row.dipid }}" onclick='toggleClass("{{ row.dipid }}sql")' class="hsql">Toggle {{ row.dipid }} SQL fields</a><br />
+        <a href="#{{ row.dipid }}" onclick='
+        displayClass("{{ row.dipid }}auto");
+        displayClass("{{ row.dipid }}sql");
+        displayClass("{{ row.dipid }}key")'>Show all {{ row.dipid }} fields</a>
       </td>
     </tr>
   </table>
   {% endif %}
   
-<div class="{{ row.class }} {{ row.table}}{{ row.class }}" style="margin:10px;">
+<div class="{{ row.class }} {{ row.dipid }}{{ row.class }}" style="margin:10px;">
   
-    <label for="{{ row.table }}.{{ row.field }}">{{ row.field }} </label>
+    <label for="{{ row.dipid }}.{{ row.field }}">{{ row.field }} </label>
   
     <br />
   <select id="{{ row.dipid }}.{{ row.field }}" size="{{ headerinfo.ids|length +1 }}" required  {{ row.disabled }} onchange="selectFixSQLsets(this)">
@@ -255,13 +265,13 @@ select:required:invalid {
   <input type="text" id="{{ row.dipid }}.{{ row.field }}.custom" onchange="selectFixSQLsets(this)" value="{{ row.custom }}" {{ row.customdisabled }}/><input type="button" value="Use Other" />
 
   {% if row.choosekeys %}
-  <label for="ck{{ row.table }}.{{ row.field }}">Add {{ row.field }} to key list of {{row.table}} {{ row.xkeys}}</label>
-    <input type="checkbox" name="dupkeyrow{{ row.dipid }}" value="{{ row.field }}">
+  <label for="ck{{ row.dipid }}">Add {{ row.field }} to key list of {{row.table}} {{ row.xkeys}}</label>
+    <input type="checkbox" name="ck{{ row.dipid }}" value="{{ row.field }}" id="ck{{ row.dipid }}">
   {% else %}
   <br />
 
   {% endif %}
-  
+
 </div>
 
   
