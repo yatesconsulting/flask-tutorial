@@ -219,6 +219,7 @@ select:required:invalid {
         <h3>-- Extra Keys: {{ row.xkeys }} --</h3>
         {% endif %}
         <h3>-- DIPid {{ row.dipid }}</h3>
+        <!-- 
         <label for="shuffle{{ row.dipid }}">Shuffle {{ row.dipid }} instead, on field</label>
         <select name="shuffle{{ row.dipid }}" id="shuffle{{ row.dipid }}">
         <option value=""></option>
@@ -227,6 +228,7 @@ select:required:invalid {
         <option value="">table</option>
         <option value="">somehow</option>
         </select><br />
+        -->
       
         <div class="sql {{ row.dipid }}sql" id="sql{{ row.dipid }}">
           {{ sqlinfo["precheck" ~ row.dipid] | safe }}
