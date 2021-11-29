@@ -87,7 +87,7 @@ class Dupset():
     def _listalltableswithid_numcolumns(self):
         # ID	tablename	xkeys	ID_NUM
         # 827	ITEMS	GROUP_NUMBER, ACTION_CODE	ID_NUMBER
-        sql = "SELECT * from {}..BAY_DupExtraKeys".format(self.dbname)
+        sql = "SELECT * from {}..BAY_DupExtraKeys order by id".format(self.dbname)
         return self.db.execute_s(sql)
 
     def _idsintable(self, table, ek=[]):
@@ -261,6 +261,8 @@ class Dupset():
             xkeys = "" # YR_CDE=2020 and TRM_CDE=30 form
             # xkeysdict = {}
             gutslist = [] # ['field3=T1.field3','f2=T2.f2']
+            if table == 'NAME_HISTORY':
+                gutslist.append('UDEF_5a_1=DUPFX')
             approwversions =[]
             cids = []
             
@@ -388,6 +390,7 @@ class Dupset():
 
                 # if ignoring this column, then just put all values in, and default to first one   
                 # do the same thing if all values are None
+                #  DO NOT USE THIS, final update for DUPFX in NAME_MASTER as only mouse trail
                 # if col.upper() == "USER_NAME":
                 #     myformbodyinfo['custom'] = 'BAYMerge'
                 #     # myformbodyinfo['customdi  sabled'] = 'disabled'
@@ -510,7 +513,7 @@ class Dupset():
 ###########################
 #the below is a manual test.
 if __name__ == '__main__':
-    dupset = 58
+    dupset = 2
     sumpin = Dupset(dupset)
     # print(sumpin.error)
     # print(sumpin.ids)
@@ -520,27 +523,11 @@ if __name__ == '__main__':
     # print(sumpin.status)
     # print(sumpin.update_status())
     # sumpin.build_table_list()
-    # print(sumpin.status)
+    print(sumpin.status)
     sumpin.update_formdata()
-    # print(sumpin._idsintable('NameMaster'))
+    print(sumpin._idsintable('NameMaster'))
     # [{'id_num': 4359752, 'cnt': 1}, {'id_num': 4368418, 'cnt': 1}]
     # print(max([l['cnt'] for l in s]) )
 
-    # print(sumpin.formheaderinfo)
+    print(sumpin.formheaderinfo)
     # print(sumpin.formbodyinfo)
-
-    # print(sumpin._listalltableswithid_numcolumns())
-    # # print(sumpin._idsintable('NameMaster', ek=[]))
-    # print(sumpin._idsintable('NameMaster'))
-    # print(sumpin._dupextrakeysuniqvaluekeys('NameMaster'))
-    # # print(sumpin._rechecksummarycounts('NameMaster', ek))
-    # print(sumpin._colsfromtable('NameMaster'))
-    # # print(sumpin._rowsfromtable('NameMaster', id_num))
-    # print(sumpin._basicdupsetinfo())
-    # print(sumpin._checkstatusofdupinprogress())
-    # print(sumpin._ignorefields('NameMaster'))
-    # # print(sumpin._prepFormSelectionFromDupsInProgress(dipid, table, extrakeys))
-    # # print(sumpin._insertintodiptable(table, ek=""))
-    # print(sumpin._insertintodiptable('NameMaster'))
-    # print(sumpin._allnotdonetablesfordupset())
-    # print(sumpin._allkeyscombosforgooddupset())

@@ -120,13 +120,13 @@ def showlist():
     select dupset,D.id_num,human_verified,goodid,origtablewithdup,db
     ,N.LAST_NAME + ', ' + N.FIRST_NAME as LastFirst
     from {}..BAY_DupIDs D
-    join {}..name_master N
+    join {}..namemaster N
     on n.ID_NUM = D.id_num
     union
     select dupset,goodid,human_verified,goodid,origtablewithdup,db
     ,N.LAST_NAME + ', ' + N.FIRST_NAME as LastFirst
     from {}..BAY_DupIDs D
-    join {}..name_master N
+    join {}..namemaster N
     on n.ID_NUM = D.goodid
     where isnull(d.goodid, 0)>0""".format(dbname,jdbname,dbname,jdbname)
     r = db.execute_s(sql)
@@ -268,144 +268,144 @@ def _ignorefields(jdbname, table):
     """return ignored fields in the table, or a constant list for now"""
     return ['approwversion','changeuser','changejob','changetime','user_name','job_time']
 
-def _prepidsforformselection(jdbname, dupset, dipid, ids, table, extrakeys):
-    """returns 
-    [{'table':'NameMaster','extrakeys':'yr_cde=2019,trm_cde=20',
-    'field':'id_num',
-    'missingkeys':'missingkeys',
-    'class':'auto','disabled':'disabled',
-    'options':[{'selected':'selected','showval':'4363131'},
-        {'showval':'4357237', 'diasbled':'disabled'},
-        {'showval':'4366909'}]
-    },
-    ...
-    table, ids, extrakeys: needed to uniquely identify one result set, of more than one row per ID, then we are seeking keys
-    field: each db field is a row in this result set
-    missingkeys: if table is missing keys, fields will be selectable instead of values
-    class: auto|needinput|same|ignore|lockedauto
-        auto = autoselected result based on trumps or nulls, selection not locked
-        needinput = nothing locked, need user input
-        ignore = in ignore column list, user can change, but may be overwritten, like job user
-        lockedauto = keyfield all options locked, but shown
-    options: of the selected set, expecting exactly one line for each id, unless key seeking
-        selected: selected or not present for ONE line selected value
-        showval: value shown to user
-        formval: value submitted to form
-    """
-    db = pyodbc_db.MSSQL_DB_Conn()
-    ignorefields = _ignorefields(jdbname, table)
+# def _prepidsforformselection(jdbname, dupset, dipid, ids, table, extrakeys):
+#     """returns 
+#     [{'table':'NameMaster','extrakeys':'yr_cde=2019,trm_cde=20',
+#     'field':'id_num',
+#     'missingkeys':'missingkeys',
+#     'class':'auto','disabled':'disabled',
+#     'options':[{'selected':'selected','showval':'4363131'},
+#         {'showval':'4357237', 'diasbled':'disabled'},
+#         {'showval':'4366909'}]
+#     },
+#     ...
+#     table, ids, extrakeys: needed to uniquely identify one result set, of more than one row per ID, then we are seeking keys
+#     field: each db field is a row in this result set
+#     missingkeys: if table is missing keys, fields will be selectable instead of values
+#     class: auto|needinput|same|ignore|lockedauto
+#         auto = autoselected result based on trumps or nulls, selection not locked
+#         needinput = nothing locked, need user input
+#         ignore = in ignore column list, user can change, but may be overwritten, like job user
+#         lockedauto = keyfield all options locked, but shown
+#     options: of the selected set, expecting exactly one line for each id, unless key seeking
+#         selected: selected or not present for ONE line selected value
+#         showval: value shown to user
+#         formval: value submitted to form
+#     """
+#     db = pyodbc_db.MSSQL_DB_Conn()
+#     ignorefields = _ignorefields(jdbname, table)
 
-    rowj = []
-    wrk = []
-    ans = []
-    goodid = ids[0]
-    cols = _colsfromtable(jdbname, table) # a little redundant, maybe
-    missinggoodid = False # put one in for ID_NUM but everything else ---, if missing
-    morethanonerowperid = False # look for keys
+#     rowj = []
+#     wrk = []
+#     ans = []
+#     goodid = ids[0]
+#     cols = _colsfromtable(jdbname, table) # a little redundant, maybe
+#     missinggoodid = False # put one in for ID_NUM but everything else ---, if missing
+#     morethanonerowperid = False # look for keys
 
-    xkeys = ""
-    keylist = []
-    if (extrakeys > ""):
-        for ek in extrakeys:
-            for b in ek:
-                if type(ek[b]) == int:
-                    keylist.append("{}={}".format(b, ek[b]))
-                else:
-                    keylist.append("{}='{}'".format(b, ek[b]))
-        xkeys = " and {}".format(' and '.join(keylist))
-        keylist = []
+#     xkeys = ""
+#     keylist = []
+#     if (extrakeys > ""):
+#         for ek in extrakeys:
+#             for b in ek:
+#                 if type(ek[b]) == int:
+#                     keylist.append("{}={}".format(b, ek[b]))
+#                 else:
+#                     keylist.append("{}='{}'".format(b, ek[b]))
+#         xkeys = " and {}".format(' and '.join(keylist))
+#         keylist = []
 
-    sql = """select * from {}..{} where id_num in ({}) {}
-    order by ID_NUM""".format( jdbname, table, ",".join(map(str, ids)), xkeys)
-    rows = db.execute_s(sql) 
+#     sql = """select * from {}..{} where id_num in ({}) {}
+#     order by ID_NUM""".format( jdbname, table, ",".join(map(str, ids)), xkeys)
+#     rows = db.execute_s(sql) 
 
-    # return rows
+#     # return rows
 
-    # ok, let's sort lots of things out
-    # if there is no goodid, then we need to put the goodid in the id_num first row, but all other first rows will be "---"
-    # need to identify which row is the goodid, and put it(them?) first
-    #  so rebuild entire list in correct display order
-    # if there is more than one row for any id, then we need to only offer key selection
-    rowsordered = []
-    missinggoodid = not(goodid in [l['ID_NUM'] for l in rows])
-    idcounts = {}
-    for i in ids:
-        idcounts[i] = 0
+#     # ok, let's sort lots of things out
+#     # if there is no goodid, then we need to put the goodid in the id_num first row, but all other first rows will be "---"
+#     # need to identify which row is the goodid, and put it(them?) first
+#     #  so rebuild entire list in correct display order
+#     # if there is more than one row for any id, then we need to only offer key selection
+#     rowsordered = []
+#     missinggoodid = not(goodid in [l['ID_NUM'] for l in rows])
+#     idcounts = {}
+#     for i in ids:
+#         idcounts[i] = 0
     
-    for r in rows:
-        if r['ID_NUM']:
-            idcounts[r['ID_NUM']] += 1
-            if r['ID_NUM'] == goodid:
-                rowsordered.append(r)
-            else:
-                rowsordered.insert(0, r)        
-        else:
-            # nothing should ever make it here
-            pass
-    # if any idcounts > 1
-    morethanonerowperid = max([l for l in idcounts]) > 1
-    # idcounts = {}
+#     for r in rows:
+#         if r['ID_NUM']:
+#             idcounts[r['ID_NUM']] += 1
+#             if r['ID_NUM'] == goodid:
+#                 rowsordered.append(r)
+#             else:
+#                 rowsordered.insert(0, r)        
+#         else:
+#             # nothing should ever make it here
+#             pass
+#     # if any idcounts > 1
+#     morethanonerowperid = max([l for l in idcounts]) > 1
+#     # idcounts = {}
 
-    # not sure if I need this
-    # if missinggoodid:
-    #     rowsordered.append({'ID_NUM':'---'})
+#     # not sure if I need this
+#     # if missinggoodid:
+#     #     rowsordered.append({'ID_NUM':'---'})
 
-    # # if only one row, then all defaults revolve around it, don't check so many things later
-    # if len(rows) == 1:
-    #     if missinggoodid:
-    #         pass
+#     # # if only one row, then all defaults revolve around it, don't check so many things later
+#     # if len(rows) == 1:
+#     #     if missinggoodid:
+#     #         pass
 
-    # if no goodid, show a line of ---'s in it's place, what ID gets updated to goodid?
-
-
-    # if morethanonerowperid == True
-    #   we should only allow selection of keys to reduce sets down
-    #    so lock down key rows with disabled, but not other rows
-    #    lock down all options rows with disabled
-    #    normal "selection" routines? or just leave everything unchecked 
-    #   still hide same/ignore/auto rows
-
-    for col in cols:
-        wcol = []
-        styleclass = ""
-        if col in ignorefields:
-            styleclass = "ignore"
-        elif extrakeys and col in extrakeys[0].keys():
-            styleclass = "lockedauto"
-        elif col == "ID_NUM":
-            styleclass = "lockedauto"
-
-        # compare all the values for this col key:
-        if len(rows) == 1:
-            if missinggoodid:
-                # make a row with a fake ID_NUM = id[0] to push into this set
-                if col == "ID_NUM":
-                    # put id[0] on this value, and select it, and formvalue = ???
-                    pass
-            else:
-                # make a form row with good ID and that's the only row, so, yeah
-                pass
-        for r in rows:
-            if r[col] != "None":
-                trowval.append(r[col])
-
-        # auto = autoselected result based on trumps or nulls, selection not locked
-        # needinput = nothing locked, need user input
-        # compare all the values on this row for style=auto or needinput
-        return([missinggoodid, morethanonerowperid,table,col,rows])
+#     # if no goodid, show a line of ---'s in it's place, what ID gets updated to goodid?
 
 
-        for r in range(len(rows)):
-            if rows[col]:
-                wcol.append(rows[col])
+#     # if morethanonerowperid == True
+#     #   we should only allow selection of keys to reduce sets down
+#     #    so lock down key rows with disabled, but not other rows
+#     #    lock down all options rows with disabled
+#     #    normal "selection" routines? or just leave everything unchecked 
+#     #   still hide same/ignore/auto rows
 
-        # for r in rowsthathavegoodid:
-        #     if rows[col] and rows[col]
-        # for r in range(len(rows)):
-        # if r in rowsthathavegoodid:
-        #     continue
+#     for col in cols:
+#         wcol = []
+#         styleclass = ""
+#         if col in ignorefields:
+#             styleclass = "ignore"
+#         elif extrakeys and col in extrakeys[0].keys():
+#             styleclass = "lockedauto"
+#         elif col == "ID_NUM":
+#             styleclass = "lockedauto"
 
-    return ans
+#         # compare all the values for this col key:
+#         if len(rows) == 1:
+#             if missinggoodid:
+#                 # make a row with a fake ID_NUM = id[0] to push into this set
+#                 if col == "ID_NUM":
+#                     # put id[0] on this value, and select it, and formvalue = ???
+#                     pass
+#             else:
+#                 # make a form row with good ID and that's the only row, so, yeah
+#                 pass
+#         for r in rows:
+#             if r[col] != "None":
+#                 trowval.append(r[col])
+
+#         # auto = autoselected result based on trumps or nulls, selection not locked
+#         # needinput = nothing locked, need user input
+#         # compare all the values on this row for style=auto or needinput
+#         return([missinggoodid, morethanonerowperid,table,col,rows])
+
+
+#         for r in range(len(rows)):
+#             if rows[col]:
+#                 wcol.append(rows[col])
+
+#         # for r in rowsthathavegoodid:
+#         #     if rows[col] and rows[col]
+#         # for r in range(len(rows)):
+#         # if r in rowsthathavegoodid:
+#         #     continue
+
+#     return ans
 
 def _insertintodiptable(jdbname, dupset, table, ek=""):
     ''' insert into BAY_DupsInProgress'''
