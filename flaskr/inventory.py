@@ -294,6 +294,7 @@ def deletions():
         color = ""
         formtitle = ""
         sql = ""
+        myform = ""
         if show == "inactive":
             sql = "select *,(select count(distinct tag) from invdelformdetails where invid=F.id) as tagcount from invdelform F where F.active = 0 order by updated desc;"
             color = "Pink"
@@ -308,8 +309,11 @@ def deletions():
             sql = "select *,(select count(distinct tag) from invdelformdetails where invid=F.id) as tagcount from invdelform F where F.active = 1 order by updated desc;"
             color = "AliceBlue"
             formtitle = "Active Deletion Forms"
+            myform = '<span style="align: right;"><a href="?show=inactive">View Inactive Forms</a></span>'
         rows = _formfromdb(dbf, sql)
         # for r in/ rows:
+
+
 
 
         # return render_template('inventory/index.html',rows=[{'317 submit=':submit, 'rows':rows, 'sql':sql}])
@@ -318,7 +322,7 @@ def deletions():
             i = f['id']
             cnt = f['tagcount']
             s = "s" if cnt != 1 else ""
-            myform = '<div style="border-radius: 10px; border:2px solid black; background: {}; padding:10px;"><h4>Deletion form number {} - contains {} tag{}</h4>'.format(color, i, cnt, s)
+            myform += '<div style="border-radius: 10px; border:2px solid black; background: {}; padding:10px;"><h4>Deletion form number {} - contains {} tag{}</h4>'.format(color, i, cnt, s)
 
             v = "" if f['notes'] == None else f['notes']
             if v:
