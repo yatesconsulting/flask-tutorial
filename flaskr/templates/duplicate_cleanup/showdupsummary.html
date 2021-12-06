@@ -7,7 +7,7 @@
 {% for row in rows %}
   {% if loop.changed(row.dupset) %}
   <hr />
-    <a href="{{ url_for('.showdupset', dupset = row.dupset) }}">Dupset {{ row.dupset }} Details</a>
+    <a href="{{ url_for('duplicate_cleanup.showdupset', dupset = row.dupset+0) }}">Dupset {{ row.dupset }} Details</a>
   &middot;
     {% if row.human_verified %}
     Human Verified &middot;

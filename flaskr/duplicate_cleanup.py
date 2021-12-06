@@ -8,6 +8,7 @@ from flaskr.auth import login_required
 from flaskr.db import get_db
 from . import pyodbc_db
 from myflaskrsecrets import dbname ## mcn_connet for us
+from flaskr.models.dupsets import Dupset
 
 bp = Blueprint('duplicate_cleanup', __name__, url_prefix='/dups')    
 
@@ -40,7 +41,7 @@ def index():
     return render_template('duplicate_cleanup/index.html', rows=rows, links=links)
 
 @bp.route('/refreshdups', methods=('GET', 'POST'))
-# @login_required
+@login_required
 def refreshdups():
     # if request.method == 'GET':
     # form with database selections 
@@ -50,7 +51,6 @@ def refreshdups():
     #     body = request.form['body']
 
     db = pyodbc_db.MSSQL_DB_Conn()
-    # a = ['blue','red']
     jdbname = "TmsEPly" # Prd
     done = []
     sql = "delete from {}..BAY_DupIDs".format(dbname)
@@ -86,7 +86,7 @@ def refreshdups():
     if (db.execute_i_u_d(sql)):
         sql = """SELECT t.name AS procedure_name
         FROM mcn_connect.sys.procedures AS t
-        where t.name like '%BAY%{}'""".format(jdbname)
+        where t.name like 'BAY_sp_dup%{}'""".format(jdbname)
         # blah
         r = db.execute_s(sql)
         for a in r:
@@ -102,17 +102,6 @@ def refreshdups():
 @bp.route('/showlist') # , methods=('GET', 'POST'))
 @login_required
 def showlist():
-    # if request.method == 'POST':
-    #     dupset = request.form['dupset']
-    #     body = request.form['body']
-    #     error = None
-
-    #     if not dupset:
-    #         error = 'Exactly one set of dups must be selected.'
-
-    #     if error is not None:
-    #         flash(error)
-    #     else:
     db = pyodbc_db.MSSQL_DB_Conn()
     sql = """select distinct db from MCN_Connect..BAY_DupIDs"""
     r = db.execute_s(sql)
@@ -131,13 +120,13 @@ def showlist():
     select dupset,D.id_num,human_verified,goodid,origtablewithdup,db
     ,N.LAST_NAME + ', ' + N.FIRST_NAME as LastFirst
     from {}..BAY_DupIDs D
-    join {}..name_master N
+    join {}..namemaster N
     on n.ID_NUM = D.id_num
     union
     select dupset,goodid,human_verified,goodid,origtablewithdup,db
     ,N.LAST_NAME + ', ' + N.FIRST_NAME as LastFirst
     from {}..BAY_DupIDs D
-    join {}..name_master N
+    join {}..namemaster N
     on n.ID_NUM = D.goodid
     where isnull(d.goodid, 0)>0""".format(dbname,jdbname,dbname,jdbname)
     r = db.execute_s(sql)
@@ -279,124 +268,144 @@ def _ignorefields(jdbname, table):
     """return ignored fields in the table, or a constant list for now"""
     return ['approwversion','changeuser','changejob','changetime','user_name','job_time']
 
-def _prepidsforformselection(jdbname, dupset, dipid, ids, table, extrakeys):
-    """returns 
-    [{'table':'NameMaster','extrakeys':'yr_cde=2019,trm_cde=20',
-    'field':'id_num',
-    'missingkeys':'missingkeys',
-    'class':'auto','disabled':'disabled',
-    'options':[{'selected':'selected','showval':'4363131'},
-        {'showval':'4357237', 'diasbled':'disabled'},
-        {'showval':'4366909'}]
-    },
-    ...
-    table, ids, extrakeys: needed to uniquely identify one result set, of more than one row per ID, then we are seeking keys
-    field: each db field is a row in this result set
-    missingkeys: if table is missing keys, fields will be selectable instead of values
-    class: auto|needinput|same|ignore|lockedauto
-        auto = autoselected result based on trumps or nulls, selection not locked
-        needinput = nothing locked, need user input
-        ignore = in ignore column list, user can change, but may be overwritten, like job user
-        lockedauto = keyfield all options locked, but shown
-    options: of the selected set, expecting exactly one line for each id, unless key seeking
-        selected: selected or not present for ONE line selected value
-        showval: value shown to user
-        formval: value submitted to form
-    """
-    db = pyodbc_db.MSSQL_DB_Conn()
-    ignorefields = _ignorefields(jdbname, table)
+# def _prepidsforformselection(jdbname, dupset, dipid, ids, table, extrakeys):
+#     """returns 
+#     [{'table':'NameMaster','extrakeys':'yr_cde=2019,trm_cde=20',
+#     'field':'id_num',
+#     'missingkeys':'missingkeys',
+#     'class':'auto','disabled':'disabled',
+#     'options':[{'selected':'selected','showval':'4363131'},
+#         {'showval':'4357237', 'diasbled':'disabled'},
+#         {'showval':'4366909'}]
+#     },
+#     ...
+#     table, ids, extrakeys: needed to uniquely identify one result set, of more than one row per ID, then we are seeking keys
+#     field: each db field is a row in this result set
+#     missingkeys: if table is missing keys, fields will be selectable instead of values
+#     class: auto|needinput|same|ignore|lockedauto
+#         auto = autoselected result based on trumps or nulls, selection not locked
+#         needinput = nothing locked, need user input
+#         ignore = in ignore column list, user can change, but may be overwritten, like job user
+#         lockedauto = keyfield all options locked, but shown
+#     options: of the selected set, expecting exactly one line for each id, unless key seeking
+#         selected: selected or not present for ONE line selected value
+#         showval: value shown to user
+#         formval: value submitted to form
+#     """
+#     db = pyodbc_db.MSSQL_DB_Conn()
+#     ignorefields = _ignorefields(jdbname, table)
 
-    rowj = []
-    wrk = []
-    ans = []
-    cols = _colsfromtable(jdbname, table) # a little redundant, maybe
-    missinggoodid = False # put one in for ID_NUM but everything else ---
-    morethanonerowperid = False # look for keys
+#     rowj = []
+#     wrk = []
+#     ans = []
+#     goodid = ids[0]
+#     cols = _colsfromtable(jdbname, table) # a little redundant, maybe
+#     missinggoodid = False # put one in for ID_NUM but everything else ---, if missing
+#     morethanonerowperid = False # look for keys
 
-    xkeys = ""
-    keylist = []
-    if (extrakeys > ""):
-        for ek in extrakeys:
-            for b in ek:
-                if type(ek[b]) == int:
-                    keylist.append("{}={}".format(b, ek[b]))
-                else:
-                    keylist.append("{}='{}'".format(b, ek[b]))
-        xkeys = " and {}".format(' and '.join(keylist))
-        keylist = []
+#     xkeys = ""
+#     keylist = []
+#     if (extrakeys > ""):
+#         for ek in extrakeys:
+#             for b in ek:
+#                 if type(ek[b]) == int:
+#                     keylist.append("{}={}".format(b, ek[b]))
+#                 else:
+#                     keylist.append("{}='{}'".format(b, ek[b]))
+#         xkeys = " and {}".format(' and '.join(keylist))
+#         keylist = []
 
-    sql = """select * from {}..{} where id_num in ({}) {}
-    order by ID_NUM""".format( jdbname, table, ",".join(map(str, ids)), xkeys)
-    rows = db.execute_s(sql) 
+#     sql = """select * from {}..{} where id_num in ({}) {}
+#     order by ID_NUM""".format( jdbname, table, ",".join(map(str, ids)), xkeys)
+#     rows = db.execute_s(sql) 
 
-    # ok, let's sort lots of things out
-    # if there is no goodid, then we need to put the goodid in the id_num first row, but all other first rows will be "---"
-    # need to identify which row is the goodid, and put it(them?) first
-    # if there is more than one row for any id, then we need to only offer key selection
-    rowsthathavegoodid = []
+#     # return rows
 
-    idcounts = {}
-    for i in ids:
-        idcounts[i] = 0
-    for r in range(len(rows)):
-        if rows[r]['ID_NUM'] and rows[r]['ID_NUM'] == ids[0]:
-            rowsthathavegoodid.append(r)
-        for id in ids:
-            if rows[r]['ID_NUM'] == id:
-                idcounts[id] += 1
-    # if any idcounts values are > 1 then morethanonerowperid = True
-    morethanonerowperid = any(v > 1 for v in idcounts.values())
-    idcounts = {}
+#     # ok, let's sort lots of things out
+#     # if there is no goodid, then we need to put the goodid in the id_num first row, but all other first rows will be "---"
+#     # need to identify which row is the goodid, and put it(them?) first
+#     #  so rebuild entire list in correct display order
+#     # if there is more than one row for any id, then we need to only offer key selection
+#     rowsordered = []
+#     missinggoodid = not(goodid in [l['ID_NUM'] for l in rows])
+#     idcounts = {}
+#     for i in ids:
+#         idcounts[i] = 0
+    
+#     for r in rows:
+#         if r['ID_NUM']:
+#             idcounts[r['ID_NUM']] += 1
+#             if r['ID_NUM'] == goodid:
+#                 rowsordered.append(r)
+#             else:
+#                 rowsordered.insert(0, r)        
+#         else:
+#             # nothing should ever make it here
+#             pass
+#     # if any idcounts > 1
+#     morethanonerowperid = max([l for l in idcounts]) > 1
+#     # idcounts = {}
 
-    # if rowsthathavegoodid is empty, then missinggoodid = True
-    missinggoodid = not rowsthathavegoodid
+#     # not sure if I need this
+#     # if missinggoodid:
+#     #     rowsordered.append({'ID_NUM':'---'})
 
-    # # if only one row, then all defaults revolve around it, don't check so many things later
-    # if len(rows) == 1:
-    #     if missinggoodid:
-    #         pass
+#     # # if only one row, then all defaults revolve around it, don't check so many things later
+#     # if len(rows) == 1:
+#     #     if missinggoodid:
+#     #         pass
 
-    for col in cols:
-        wcol = []
-        styleclass = ""
-        if col in ignorefields:
-            styleclass = "ignore"
-        elif extrakeys and col in extrakeys[0].keys():
-            styleclass = "lockedauto"
-        elif col == "ID_NUM":
-            styleclass = "lockedauto"
-
-        # compare all the values for this col key:
-        if len(rows) == 1:
-            if missinggoodid:
-                # make a row with a fake ID_NUM = id[0] to push into this set
-                if col == "ID_NUM":
-                    # put id[0] on this value, and select it, and formvalue = ???
-                    pass
-            else:
-                # make a form row with good ID and that's the only row, so, yeah
-                pass
-        for r in rows:
-            if r[col] != "None":
-                trowval.append(r[col])
-
-        # auto = autoselected result based on trumps or nulls, selection not locked
-        # needinput = nothing locked, need user input
-        # compare all the values on this row for style=auto or needinput
-        return([missinggoodid, morethanonerowperid,table,col,rows])
+#     # if no goodid, show a line of ---'s in it's place, what ID gets updated to goodid?
 
 
-        for r in range(len(rows)):
-            if rows[col]:
-                wcol.append(rows[col])
+#     # if morethanonerowperid == True
+#     #   we should only allow selection of keys to reduce sets down
+#     #    so lock down key rows with disabled, but not other rows
+#     #    lock down all options rows with disabled
+#     #    normal "selection" routines? or just leave everything unchecked 
+#     #   still hide same/ignore/auto rows
 
-        # for r in rowsthathavegoodid:
-        #     if rows[col] and rows[col]
-        # for r in range(len(rows)):
-        # if r in rowsthathavegoodid:
-        #     continue
+#     for col in cols:
+#         wcol = []
+#         styleclass = ""
+#         if col in ignorefields:
+#             styleclass = "ignore"
+#         elif extrakeys and col in extrakeys[0].keys():
+#             styleclass = "lockedauto"
+#         elif col == "ID_NUM":
+#             styleclass = "lockedauto"
 
-    return ans
+#         # compare all the values for this col key:
+#         if len(rows) == 1:
+#             if missinggoodid:
+#                 # make a row with a fake ID_NUM = id[0] to push into this set
+#                 if col == "ID_NUM":
+#                     # put id[0] on this value, and select it, and formvalue = ???
+#                     pass
+#             else:
+#                 # make a form row with good ID and that's the only row, so, yeah
+#                 pass
+#         for r in rows:
+#             if r[col] != "None":
+#                 trowval.append(r[col])
+
+#         # auto = autoselected result based on trumps or nulls, selection not locked
+#         # needinput = nothing locked, need user input
+#         # compare all the values on this row for style=auto or needinput
+#         return([missinggoodid, morethanonerowperid,table,col,rows])
+
+
+#         for r in range(len(rows)):
+#             if rows[col]:
+#                 wcol.append(rows[col])
+
+#         # for r in rowsthathavegoodid:
+#         #     if rows[col] and rows[col]
+#         # for r in range(len(rows)):
+#         # if r in rowsthathavegoodid:
+#         #     continue
+
+#     return ans
 
 def _insertintodiptable(jdbname, dupset, table, ek=""):
     ''' insert into BAY_DupsInProgress'''
@@ -405,210 +414,32 @@ def _insertintodiptable(jdbname, dupset, table, ek=""):
     (dupset, tablename, xkeys, db) VALUES ({},'{}','{}','{}')
     """.format(dbname, dupset, table, ek, jdbname)
     db.execute_i_u_d(sql)
-    
+
+def _allnotdonetablesfordupset(dupset):
+    ''' return list of only the tables with any partial keys that are in a started dupset, but HELPME flagged''' 
+    db = pyodbc_db.MSSQL_DB_Conn()
+    sql = """select * from {}..BAY_DupsInProgress where dupset = {} and xkeys = 'HELPME'
+    """.format(dbname, dupset)
+    return db.execute_s(sql)
+
+def _allkeyscombosforgooddupset(dupset):
+    """ return list of only this dupset from prep table with good set of data, no HELPMEs """
+    db = pyodbc_db.MSSQL_DB_Conn()
+    sql = """select * from {}..BAY_DupsInProgress where dupset = {}
+        """.format(dbname, dupset)
+    return db.execute_s(sql)
 
 @bp.route('/showdupset/<int:dupset>', methods=('GET', 'POST'))
 @login_required
 def showdupset(dupset):
-    dupids = _basicdupsetinfo(dbname, dupset)
-    # return render_template('duplicate_cleanup/index.html', rows=dupids)
-    jdbname = dupids[0]['db']
-    goodid = dupids[0]['goodid']
-    if not goodid:
-        flash("Please identify the goodid and refresh duplist first (dupset {})".format(dupset))
-        return redirect(url_for('.index'))
-    # sort the ids to put goodid first, then ohen others in sorted order, for repeatability later
-    ids = sorted([l['id_num'] for l in dupids]) # another stackoverflow success story
-    ids.remove(goodid)
-    ids.insert(0, goodid)
-    numids = len(ids)
-    # return render_template('duplicate_cleanup/index.html', rows=ids+["goodid={}".format(goodid)])
-    debugrows = []
-    jcols = []
-
-    # 1. dupset is inserted into BAY_DupsInProgress noting any that that need more info via HELPME flag in xkey col
-    # 2. Work through each HELPME adding new BAY_DupExtraKeys values and trying again
-    # 3. all HELME records gone, move on to full merge set of tables
-    ckstatus = _checkstatusofdupinprogress(dupset)
-    if ckstatus and ckstatus[0]['notdone']:
-        # not all ready, define some more keys
-        # just work with the notdone flagged ones
-        return render_template('duplicate_cleanup/index.html', rows=['define some more keys'])
-    elif ckstatus:
-        # must all be OK, let's do it for real
-        return render_template('duplicate_cleanup/index.html', rows=['run it for real'])
-    else:
-        # nothing for this dupset, let's fill the BAY_DupsInProgress best we can
-        # then redirect back to check it again
-        alltableswithidnumcol = _listalltableswithid_numcolumns(jdbname)
-        # alltableswithidnumcol = [{'table_name':'NameMaster'}]
-        for t in alltableswithidnumcol:
-            table = t['table_name']
-            cols = _colsfromtable(jdbname, table)
-            extrakeys = _extrakeys(jdbname, table, ids)
-            # extrakeys = [{'YR':2017, 'TRM':10}, {'YR':2017	, 'TRM':20}, {'YR':2017	, 'TRM':30}]
-            # debugrows.append({'xtrakeys':'_extrakeys', 'ans':extrakeys, 'table': table})
-            # if extrakeys:
-            #     for extrakey in extrakeys:
-            #         return render_template('duplicate_cleanup/index.html', rows=[table,extrakey])
-            #         jcols.append(_prepidsforformselection(jdbname, dupset, 0, ids, table, extrakey))
-            # else:
-            #     jcols.append( _prepidsforformselection(jdbname, dupset, 0, ids, table, extrakeys="") )
-
-            # return render_template('duplicate_cleanup/index.html', rows=['blah',table,jcols])
-
-            if extrakeys:
-                for ek in extrakeys:
-                    s = _idsintable(jdbname, table, ids, ek)
-                    if s and max([l['cnt'] for l in s]) > 1:
-                        helpme = 'HELPME'
-                    # debugrows.append({'results':'from _idsintable w/ extrakey', 
-                    # 'table':table, 'extrakey':ek, 'ans':s})
-                    # _buildformdetaillines(jdbname, table, s, ids, cols, ek)
-                if s and helpme:
-                    _insertintodiptable(jdbname, dupset, table, helpme)
-                elif s:
-                    for ek in extrakeys:
-                        _insertintodiptable(jdbname, dupset, table, ek) # store as dictionary?
-            else:
-                s = _idsintable(jdbname, table, ids)
-                helpme = ""
-                if s and max([l['cnt'] for l in s]) > 1:
-                    helpme = "HELPME"
-                if s:
-                    _insertintodiptable(jdbname, dupset, table, helpme)
-                # debugrows.append({'results':'from _idsintable (no extrakey)', 
-                #     'table':table, 'ans':s})
-        # return render_template('duplicate_cleanup/index.html', rows=debugrows)
-        return redirect(url_for('.showdupset', dupset=dupset))
-
-    # missingkeys = []
-    # ignorelist = _ignorefields(table)
-    # maybe add some more to this with another table to join on (per table results)
-    debugrows.append("comparing {} with the goodid of {}".format(ids, goodid))
+    ans = Dupset(dupset)
+    ans.update_status()
+    ans.update_formdata()
+    return render_template('duplicate_cleanup/showdupsetdetail.html',
+        rows=ans.formbodyinfo, headerinfo=ans.formheaderinfo, sqlinfo=ans.sqlinfo)
+    return render_template('duplicate_cleanup/index.html',
+        rows=[ans.sqlinfo, ans.formheaderinfo, ans.formbodyinfo])
     
-    rowsj = [] # for jinja2, this is the layout of the html form
-    # each row is a dictionary with keys table, field, class (auto|needinput|same|ignore),
-    #  diabled(disable|), options [{selected(selected|),disbled(disabled|),showval, formval}]
-    headerinfo = {'dupset':dupset, 'goodid':goodid, 'ids':ids}
-
-    # return render_template('duplicate_cleanup/index.html', rows=alltableswithidnumcol)
-    
-
-
-        # # 1. find if there are any count(*) > 1, poisons entire dupset until corrected
-        # if s and max([l['cnt'] for l in s]) > 1:
-        #     tablecorrectionneeded = True
-        #     debugrows.append({'tablecorrection':True,'table':table, 'dupset':dupset})
-        #     missingkeys.append([{'tablecorrection':True,'table':table, 'dupset':dupset}]) 
-
-        #     # return render_template('duplicate_cleanup/index.html', 
-        #     #     rows=['found some dup rows per id in',table])
-        
-        # # missingkeys is the only array filled once tablecorrectionneeded is toggled True
-        # if tablecorrectionneeded:
-        #     continue
-
-        # # and run them, and check them again
-        # if morekeys:
-        #     for ek in morekeys:
-        #         pass
-        # # s = _rechecksummarycounts(jdbname, table, ids, ek):
-
-        # # now loop over each of the morekeys to get a new uniq set for all this again
-        
-
-        # # return render_template('duplicate_cleanup/index.html', rows=s)
-        # # is the goodid one of the ids returned?
-        # goodidins = goodid in [l['id_num'] for l in s]
-        # # return render_template('duplicate_cleanup/index.html', rows=[goodidins])
-        
-        # # . multi lines with a good id, and all the others, so show table for sure                        
-        # if len(s) > 1 and goodidins and len(s) == len(ids):
-        #     debugrows.append("table {} (1 goodid) with a {} count (show premium diff){}".format(table, len(s), ""))
-        
-        # # . multi lines with a good id, and one or more others, but not all of them
-        # elif len(s) > 1 and goodidins:
-        #     debugrows.append("table {} (1 goodid) with a {} count, missing one or more dup ids){}".format(table, len(s), ""))
-
-        # # . one lines with a not id, so it just has one update statement and no user intervention
-        # # show it only with the key columns that will be updated shown
-        # elif len(s) == 1 and not goodidins:
-        #     debugrows.append("table {} (0 goodid) 1 ID, {} (show, key update)".format(table, s[0]['id_num']))        
-        
-        # # . table has only one entry, for our goodid, no updates
-        # elif len(s) == 1 and goodidins:
-        #     debugrows.append("table {} (1 goodid) only ID, ignore/display?".format(table))        
-
-        # # . nothing to see here, really nothing with those keys in this table
-        # elif len(s) == 0:
-        #     debugrows.append("table {} is not interesting to us".format(table)) 
-
-        # # . BAD, nothing should get here, all cases should have been handled
-        # else:
-        #     debugrows.append("table {} had nutin - BAD BAAAD".format(table))
-        # #  now that the metadata is gathered, let's do something with each column
-    
-        
-
-        
-        # must pull table summaries first and loop over them, this takes forever without
-        # r=[]
-        # rowcountsok = True
-        # for id in ids:
-        #     ans = _rowsfromtable(jdbname, table, id)
-        #     # return render_template('duplicate_cleanup/index.html', rows=[ans2])
-        #     if len(ans) > 1:
-        #         # table isinvalid, not enough keys probably
-        #         rowcountsok = False
-        #     r.append(ans)
-        # if rowcountsok and r:
-        #     # look it over, maybe missing goodids, or all records, etc
-        #     debugrows.append("processing {} with id count of {}".format(table, len(r)))
-        # # else:
-        #     # return render_template('duplicate_cleanup/index.html', rows=['noteallyok',r])
-
-        
-
-        # sql = "select '{}' as [table]".format(table)
-        # sqlp2 = ""
-        # for n in range(numids):
-        #     for c in cols:
-        #         sql += ", T{}.{} as [T{}{}]".format(n, c, n, c)
-        #     if n > 0:
-        #         sqlp2 += "join {}..{} T{} on T{}.id_num = {}".format(jdbname, table, n, n, ids[n])
-        # sql += " from {}..{} T0 {} where T0.id_num = {}".format(jdbname, table, sqlp2, ids[0])
-        # # ok, now do something with this terribly ugly SQL
-        # # return render_template('duplicate_cleanup/index.html', rows=[sql])
-        # # uglysql = db.execute_s(sql)
-        # # return render_template('duplicate_cleanup/index.html', rows=uglysql)
-        # for c in cols:
-        #     if c in ignorelist:
-        #         # forj needs line for each id, just select the first one since all form fields are required
-        #         onerow = []
-        #         onerow.append(jdbname)
-        #         onerow.append(c)
-        #         for n in range(numids):
-        #             for c in cols:
-        #                 "T{}{}".format(n, c)
-        #         rowsj.append(onerow)
-
-        #     else:
-        #         ckthesevals = []
-        #         for n in range(numids):
-        #             ttag = "T{}{}".format(n, c)
-        #             # ckthesevals.append(uglysql[0][ttag])
-        #         if len(set(ckthesevals)) != 1:
-        #             # thishtml += "Col: {}\n".format(c)
-        #             goodidmarker = ""
-        #             for n in range(numids):
-        #                 ttag = "T{}{}".format(n, c)
-        #                 if dupids[n]['id_num'] == goodid:
-        #                     goodidmarker = "--"
-        #                 else:
-        #                     goodidmarker = ""
-        #                 # thishtml += "{}{}{}\n".format(goodidmarker, uglysql[0][ttag], goodidmarker)
-
     return render_template('duplicate_cleanup/index.html', rows=debugrows)
     # return render_template('duplicate_cleanup/showdupsetdetail.html', rows=[thishtml])
 
@@ -630,38 +461,92 @@ def test():
 @bp.route('/test2')
 @login_required
 def test2():
+    #  guts json dump of all of them
+    #################### HERE"S THE KEY
+    sqlinfo = {'guts':"{234:['field3=T1.field3','duh=T2.duh']}",
+        234:"ffffrom NAME_TYPE_TABLE T0  join NAME_TYPE_TABLE T1 on T1.ID_NUM = 4357237 and blah=blah,s=s join NAME_TYPE_TABLE T2 on T2.ID_NUM = 4366909 and blah=blah,s=s where T0.ID_NUM = 436313 and blah=blah,s=s1<br />delete from NM where ID_NUM = 4357237 and blah=blah,s=s1<br />delete from NM where ID_NUM = 4366909 and blah=blah,s=s1"}
     headerinfo = {'dupset':29, 'goodid':4363131 , 'ids':[4363131, 4357237, 4366909]}
-    rowsj = [{'table':'NameMaster','field':'id_num','class':'auto','disabled':'disabled',
+    rowsj = [{'table':'NAME_TYPE_TABLE','field':'id_num','class':'key',
+    'xkeys':'blah=blah,s=s','dipid':234,
+    'options':[{'selected':'selected','showval':'4363131','disabled':'disabled'},
+    {'showval':'4357237','disabled':'disabled'},
+    {'showval':'4366909','disabled':'disabled'}]},
+    {'table':'NAME_TYPE_TABLE',
+    'xkeys':'blah=blah','dipid':234,
+    'field':'field2','class':'auto',
+    'options':[{'selected':'selected','showval':'B'},
+    {'showval':'NULL','formval':'T1'},
+    {'showval':'None','formval':'T2'}]},
+    {'table':'NAME_TYPE_TABLE',
+    'xkeys':'blah=blah','dipid':234,
+    'field':'field3','class':'auto',
+    'options':[{},
+    {'selected':'selected','showval':'C','formval':'T1'},
+    {'showval':'None','formval':'T2'}]},
+    {'table':'NAME_TYPE_TABLE',
+    'xkeys':'blah=blah','dipid':234,
+    'field':'field4','class':'ignore',
+    'options':[{'selected':'selected','showval':'B'},
+    {'showval':'NULL','formval':'T1'},
+    {'showval':'None','formval':'T2'}]},
+    {'table':'NAME_TYPE_TABLE',
+    'xkeys':'blah=blah','dipid':234,
+    'field':'field5','class':'same',
+    'options':[{'selected':'selected','showval':'B'},
+    {'showval':'B','formval':'T1'},
+    {'showval':'B','formval':'T2'}]}
+    ,
+    {'table':'NAME_TYPE_TABLE',
+    'xkeys':'blah=blah','dipid':234,
+    'field':'field6','class':'needinput',
+    'options':[{'showval':'B'},
+    {'showval':'C','formval':'T1'},
+    {'showval':'D','formval':'T2'}]
+    , 'custom':'blah' , 'customdisabled':'disabled' }
+    ]
+    return render_template('duplicate_cleanup/showdupsetdetail.html', rows=rowsj, headerinfo=headerinfo, sqlinfo=sqlinfo)
+
+
+@bp.route('/test3')
+@login_required
+def test3():
+    headerinfo = {'dupset':29, 'goodid':4363131 , 'ids':[4363131, 4357237, 4366909]}
+    rowsj = [{'table':'NAME_TYPE_TABLE','field':'id_num','class':'auto','disabled':'disabled',
+    'xkeys':'blah=blah','choosekeys':'yes','dipid':234,'disabled':'disabled',
     'options':[{'selected':'selected','showval':'4363131'},
     {'showval':'4357237'},
     {'showval':'4366909'}]},
-    {'table':'NameMaster',
+    {'table':'NAME_TYPE_TABLE',
+    'xkeys':'blah=blah','choosekeys':'yes','dipid':234,
     'field':'field2','class':'auto',
-    'options':[{'selected':'selected','showval':'B'},
-    {'showval':'NULL','formval':'T0.field2=T1.field2'},
-    {'showval':'None','formval':'T0.field2=T2.field2'}]},
-    {'table':'NameMaster',
+    'options':[{'selected':'selected','showval':'B','disabled':'disabled'},
+    {'showval':'NULL','formval':'T1','disabled':'disabled'},
+    {'showval':'None','formval':'T2','disabled':'disabled'}]},
+    {'table':'NAME_TYPE_TABLE',
+    'xkeys':'blah=blah','choosekeys':'yes','dipid':234,
     'field':'field3','class':'auto',
-    'options':[{},
-    {'selected':'selected','showval':'C','formval':'T0.field3=T1.field3'},
-    {'showval':'None','formval':'T0.field3=T2.field3'}]},
-    {'table':'NameMaster',
+    'options':[{'disabled':'disabled'},
+    {'selected':'selected','showval':'C','formval':'T1','disabled':'disabled'},
+    {'showval':'None','formval':'T2','disabled':'disabled'}]},
+    {'table':'NAME_TYPE_TABLE',
+    'xkeys':'blah=blah','choosekeys':'yes','dipid':234,
     'field':'field4','class':'ignore',
-    'options':[{'selected':'selected','showval':'B'},
-    {'showval':'NULL','formval':'T0.field4=T1.field4'},
-    {'showval':'None','formval':'T0.field4=T2.field4'}]},
-    {'table':'NameMaster',
+    'options':[{'selected':'selected','showval':'B','disabled':'disabled'},
+    {'showval':'NULL','formval':'T1','disabled':'disabled'},
+    {'showval':'None','formval':'T2','disabled':'disabled'}]},
+    {'table':'NAME_TYPE_TABLE',
+    'xkeys':'blah=blah','choosekeys':'yes','dipid':234,
     'field':'field5','class':'same',
-    'options':[{'selected':'selected','showval':'B'},
-    {'showval':'B','formval':'T0.field5=T1.field5'},
-    {'showval':'B','formval':'T0.field5=T2.field5'}]}
+    'options':[{'selected':'selected','showval':'B','disabled':'disabled'},
+    {'showval':'B','formval':'T1','disabled':'disabled'},
+    {'showval':'B','formval':'T2','disabled':'disabled'}]}
     ,
-    {'table':'NameMaster',
-    'field':'field6','class':'needinput',
-    'options':[{'showval':'B'},
-    {'showval':'C','formval':'T0.field5=T1.field5'},
-    {'showval':'D','formval':'T0.field5=T2.field5'}]}
+    {'table':'NAME_TYPE_TABLE',
+    'xkeys':'blah=blah','choosekeys':'yes','dipid':234,
+    'field':'field6','class':'auto','disabled':'disabled',
+    'options':[{'showval':'B','disabled':'disabled'},
+    {'showval':'C','formval':'T1','disabled':'disabled'},
+    {'showval':'D','formval':'T2','disabled':'disabled'}], 'custom':'blah'}
 
     ]
     return render_template('duplicate_cleanup/showdupsetdetail.html', rows=rowsj, headerinfo=headerinfo)
-
