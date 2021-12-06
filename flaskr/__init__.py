@@ -2,7 +2,7 @@ from flask import Flask
 import os
 
 import sys
-# sys.path.insert(0, '/var/www/flaskr')
+sys.path.insert(0, '/var/www/flaskr')
 # sys.path.insert(0, 'C:/Users/bryany/Desktop/GitHub/flask-tutorial')
 from myflaskrsecrets import secret_key
 

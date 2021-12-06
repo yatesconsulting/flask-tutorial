@@ -1,5 +1,5 @@
 <!doctype html>
-<title>Intranet - {% block title %}{% endblock %}</title>
+<title>Intranet{% if pgtitle %} - {{ pgtitle }}{% endif %}</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 <nav>
   <h1><a href="{{ url_for('index') }}">Intranet</a></h1>

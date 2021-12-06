@@ -5,6 +5,8 @@ import threading
 import time
 import queue
 import traceback
+import sys
+sys.path.insert(0, '/var/www/flaskr')
 from myflaskrsecrets import dbserver, dbname, dbuid, dbpwd
 
 # http://www.pymssql.org/en/stable/ref/_mssql.html
@@ -12,15 +14,47 @@ from myflaskrsecrets import dbserver, dbname, dbuid, dbpwd
 # from utility import Application_Logs
 
 class MSSQL_DB_Conn():
+
+    # def dict_factory(self, cursor, row):
+    #     # d = {}
+    #     # for idx, col in enumerate(cursor.description):
+    #     #     d[col[0]] = row[idx]
+    #     # return d
+
+    #     # #     for row in self.cursor.fetchall():
+    #     # # results.append(dict(zip(self.columns, row)))
+
+    #     self.columns = [column[0] for column in self.cursor.description]
+    #     results = []
+    #     count = 0
+    #     for row in self.cursor.fetchall():
+    #         results.append(dict(zip(self.columns, row)))
+    #         count += 1
+    #     self.record_count = count
+    #     return ['one potatoe','too']
+    #     return results
+
+    #         # self.columns = [column[0] for column in self.cursor.description]
+    #         # results = []
+    #         # count = 0
+    #         # for row in self.cursor.fetchall():
+    #         #     results.append(dict(zip(self.columns, row)))
+    #         #     count += 1
+    #         # self.record_count = count
+    #         # return results
+
+
+
+
     def __init__(self, db=dbname, appname='apps', timeout=8, debug=False):
         """
         Initialize the database connection.
         Connections are closed after execution.
 
         Args:
-            db (str)        Database to connect to. Default, 'Institute'
+            db (str)        Database to connect to
 
-            appname (str)   Name of application initializing connection
+            appname (str)   Name of application initializing connection, why?
 
             timeout (int)   How long we'll wait for the query to complete
                             before closing connection.
@@ -40,6 +74,7 @@ class MSSQL_DB_Conn():
         self.user =  dbuid
         self.password =  dbpwd
         self.columns = []
+        # self.row_factory = self.dict_factory
         
         # linuxodbcdriver = 'FreeTDS'
         linuxodbcdriver = "ODBC Driver 17 for SQL Server"
@@ -47,19 +82,20 @@ class MSSQL_DB_Conn():
         if self.user == "Trusted_Connection":
             self.conn = pyodbc.connect('Driver={{{}}};Server={};Database={};Trusted_Connection=yes;'.format(odbcdriver, self.server,db))
         else:
-            # server = 'tcp:myserver.database.windows.net' 
-            # database = 'mydb' 
-            # username = 'myusername' 
-            # password = 'mypassword' 
             # cnxn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};SERVER='+server+';DATABASE='+database+';UID='+username+';PWD='+ password)
             # cursor = cnxn.cursor()
-            # self.conn = pyodbc.connect(server=self.server,
-            #                        user=self.user,
-            #                        password=self.password,
-            #                        database=db,
-            #                        appname=appname or 'Apps')
-            # connstring = 'DRIVER={{{}}};SERVER=tcp:{};DATABASE={};UID={};PWD={};'.format(linuxodbcdriver, self.server,db,self.user,dbpwd)
-            self.conn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};SERVER=10.99.60.60;DATABASE=web;UID=ITFixedAssets;PWD="@YellowDog91721"')
+            connstring = 'DRIVER={{{}}};SERVER=tcp:{};DATABASE={};UID={};PWD={};Encrypt=yes;TrustServerCertificate=Yes;ssl=True;'.format(linuxodbcdriver, self.server, db, self.user, self.password)
+            
+            # toggling one of these on/off was a pretty good test
+            # connstring = 'DRIVER={{{}}};SERVER=tcp:{};DATABASE={};UID={};PWD={};Encrypt=yes;TrustServerCertificate=Yes;ssl=True;'.format(linuxodbcdriver, 'domain1', 'web', self.user, self.password)
+            # connstring = 'DRIVER={{{}}};SERVER=tcp:{};DATABASE={};UID={};PWD={};Encrypt=yes;TrustServerCertificate=Yes;ssl=True;'.format(linuxodbcdriver, 'iveesql3',"RISDBase",self.user,self.password)
+            
+            # &Encrypt=yes
+            # &TrustServerCertificate=Yes
+            # &ssl=True
+
+            self.conn = pyodbc.connect(connstring)
+
 
         # self.conn.debug_queries = debug
         ### self.log = Application_Logs().setup_logging()
@@ -76,6 +112,7 @@ class MSSQL_DB_Conn():
         for row in self.cursor:
             self.spid = row[0]
 
+        
     def execute_i_u_d(self, sql, params=None):
         """
         Run the passed sql command for the INSERT, UPDATE or DELETE.
@@ -101,7 +138,7 @@ class MSSQL_DB_Conn():
                                  daemon=True)
 
             sql_performance_monitor_thread.start()
-            self.cursor.execute(sql)
+            self.cursor.execute(sql, params)
             self.conn.commit()
             sql_completion_queue.put("query complete")
 
@@ -142,7 +179,7 @@ class MSSQL_DB_Conn():
                                  daemon=True)
 
             sql_performance_monitor_thread.start()
-            self.cursor.execute(sql) # , params)
+            self.cursor.execute(sql, params)
             sql_completion_queue.put("query complete")
 
             self.columns = [column[0] for column in self.cursor.description]
@@ -260,3 +297,16 @@ class MSSQL_DB_Conn():
         finally:
             self.cursor.close()
 
+
+###########################
+#the below is a manual test.
+if __name__ == '__main__':
+    
+    hey = MSSQL_DB_Conn()
+    print(hey.user)
+    print(hey.spid)
+    print(hey.conn)
+    sql = "select top 10 name,type from sys.tables"
+    r = hey.execute_s(sql)
+    for rr in r:
+        print(rr)
