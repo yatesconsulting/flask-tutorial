@@ -1,16 +1,21 @@
-import _mssql
+from pymssql import _mssql
+# import _mssql
 import threading
 import time
 import queue
 import traceback
+import sys
+sys.path.insert(0, '/var/www/flaskr')
+from myflaskrsecrets import dbserver, dbname, dbuid, dbpwd
+
+# from myflaskrsecrets import dbserver, dbname, dbuid, dbpwd
 
 # http://www.pymssql.org/en/stable/ref/_mssql.html
 
-from utility import Application_Logs
-
+# from utility import Application_Logs
 
 class MSSQL_DB_Conn():
-    def __init__(self, db='Institute', appname='apps', timeout=8, debug=False):
+    def __init__(self, db=dbname, appname='apps', timeout=8, debug=False):
         """
         Initialize the database connection.
         Connections are closed after execution.
@@ -32,18 +37,24 @@ class MSSQL_DB_Conn():
 
         Returns:
             MSSQLConnection (class) Sets up the connection object for queries.
-        """
-        self.server = 'papa'
-        self.user = 'REDACTED - this was the SQL Server login used to connect to the database'
-        self.password = 'REDACTED - this was the password for the above login'
-        self.conn = _mssql.connect(server=self.server,
+        """        
+        self.server =  dbserver
+        self.user =  dbuid
+        self.password =  dbpwd
+        if self.user == "Trusted_Connection":
+            self.conn = _mssql.connect(server=self.server,
+                                   database=db,
+                                   Trusted_Connection='yes',
+                                   appname=appname or 'Apps')
+        else:
+            self.conn = _mssql.connect(server='domain1',
                                    user=self.user,
                                    password=self.password,
-                                   database=db,
+                                   database='web',
                                    appname=appname or 'Apps')
 
         self.conn.debug_queries = debug
-        self.log = Application_Logs().setup_logging()
+        ### self.log = Application_Logs().setup_logging()
         # Care should be taken to ensure this timeout is a little shorter than
         # than the worker timeout in gunicorn and the nginx gateway timeout.
         # If the worker process is killed before the SQL performance monitoring
@@ -85,8 +96,8 @@ class MSSQL_DB_Conn():
 
         except Exception:
             sql_completion_queue.put("query complete")
-            self.log.exception(f"Exception occurred while executing SQL: "
-                               f"{sql}. Params: {params}")
+            ### self.log.exception(f"Exception occurred while executing SQL: "
+            ###                    f"{sql}. Params: {params}")
             return 1
 
     def execute_s(self, sql, params=None, col_headers=False):
@@ -132,8 +143,8 @@ class MSSQL_DB_Conn():
 
         except Exception:
             sql_completion_queue.put("query complete")
-            self.log.exception(f"Exception occurred while executing SQL: "
-                               f"{sql}. Params: {params}")
+            ### self.log.exception(f"Exception occurred while executing SQL: "
+            ###                    f"{sql}. Params: {params}")
             return 1
 
     def __sql_performance_monitor(self, sql_completion_queue, sql, params,
@@ -170,19 +181,19 @@ class MSSQL_DB_Conn():
             wait_rows = monitoring_connection.execute_s(wait_sql, self.spid)
             execution_time = self.gather_wait_stats_for_sql_taking_longer_than\
                 + i
-            self.log.debug(f"SQL has been executing for "
-                           f"{execution_time} seconds. SQL: {sql}, "
-                           f"params: {params}")
-            self.log.debug(f"Wait report: {wait_rows}")
+            ### self.log.debug(f"SQL has been executing for "
+            ###                f"{execution_time} seconds. SQL: {sql}, "
+            ###                f"params: {params}")
+            ### self.log.debug(f"Wait report: {wait_rows}")
             time.sleep(1)
             if sql_completion_queue.qsize() != 0:
                 return
-        self.log.warning(f"SQL took longer than "
-                         f"{self.warn_if_sql_takes_longer_than} seconds to "
-                         f"execute. SQL: {sql}, params: {params}, "
-                         f"stack: {stack_text}")
+        ### self.log.warning(f"SQL took longer than "
+        ###                  f"{self.warn_if_sql_takes_longer_than} seconds to "
+        ###                  f"execute. SQL: {sql}, params: {params}, "
+        ###                  f"stack: {stack_text}")
         block_rows = monitoring_connection.execute_s(block_sql, self.spid)
-        self.log.warning(f"Block report: {block_rows}")
+        ### self.log.warning(f"Block report: {block_rows}")
 
     def row_count(self):
         """
@@ -217,18 +228,37 @@ class MSSQL_DB_Conn():
             result (dict) Returns current year and term with offset.
         """
 
-        sql = """SELECT academic_year, academic_term, offset
-        FROM Institute..semesterinfo
-        WHERE offset = 0"""
+        # sql = """SELECT academic_year, academic_term, offset
+        # FROM Institute..semesterinfo
+        # WHERE offset = 0"""
+        sql = "select top 1 description from web..vw_web_FA_base"
+        sql = "select top 1 name,type from web.sys.tables"
 
         try:
             r = self.conn.execute_row(sql)
-            print(self.conn.description)
             return r
+            # return "blue<>{}".format(r)
+            # return r.__dict__
 
         except Exception as e:
             print(e)
+            # return ("EXCEPTION:{}".format(e))
 
         finally:
             self.conn.close()
 
+############ command line testing
+
+###########################
+#the below is a manual test.
+if __name__ == '__main__':
+    
+    hey = MSSQL_DB_Conn()
+    print(hey.user)
+    print(hey.spid)
+    print(hey.conn)
+    sql = "select top 10 'h^y' as 'hey',name,type from sys.tables"
+    r = hey.execute_s(sql)
+    print (r)
+    for rr in r:
+        print(rr)

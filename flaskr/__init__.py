@@ -1,9 +1,10 @@
 from flask import Flask
-
 import os
 
-# import sys
-# sys.path.insert(0, '/var/www/flaskr')
+import sys
+sys.path.insert(0, '/var/www/flaskr')
+# sys.path.insert(0, 'C:/Users/bryany/Desktop/GitHub/flask-tutorial')
+from myflaskrsecrets import secret_key
 
 def create_app(test_config=None):
     # create and configure the app
@@ -28,18 +29,20 @@ def create_app(test_config=None):
         os.makedirs(app.instance_path)
     except OSError:
         pass
+    app.secret_key = os.getenv('SECRET_KEY', secret_key)
 
     # a simple page that says hello
     @app.route('/hello')
     @app.route('/hello/<string:name>')
     def hello(name="world"):
-        # a = os.getenv('BLAH', 'nutin honey')
+        a = os.getenv('BLAH', 'nutin honey')
         # a={}'.format(a)
         # application.secret_key = os.getenv('SECRET_KEY', 'for dev')
         # import subprocess
         # a = subprocess.run(['env'], stdout=subprocess.PIPE)
         # a.stdout
-        return '<h1>Hello, {}!</h1>'.format(name)
+        return '<h1>Hello there, {}!</h1> from flaskr/__init__.py'.format(name)
+        # return '<h1>Hello there, {}</h1>'.format(app.secret_key)
 
     @app.route('/hello2')
     @app.route('/about')
@@ -59,7 +62,16 @@ def create_app(test_config=None):
 
     from . import blog
     app.register_blueprint(blog.bp)
-    app.add_url_rule('/', endpoint='index')
+
+    from . import inventory
+    app.register_blueprint(inventory.bp)
+
+    from . import duplicate_cleanup
+    app.register_blueprint(duplicate_cleanup.bp)
+
+    from . import home
+    app.register_blueprint(home.bp)
+    app.add_url_rule('/', endpoint='index') # needed?
 
     return app
 

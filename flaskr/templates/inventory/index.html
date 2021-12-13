@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h2><a href="{{ url_for('.index') }}">Inventory</a></h2>
+{% endblock %}
+
+{% block content %}
+
+{% if rows %}
+
+<h2>Stuff you sent</h2>
+  {% for row in rows %} 
+  <p>{{ row }}</p>
+  {% endfor %}
+{% endif %}
+
+{% if form %}
+
+<h3>{{ formtitle }}</h3>
+<form method="POST">
+
+  {% for f in form %}
+{{ f | safe }}
+  {% endfor %}
+
+</form>
+
+{% else %}
+Things anyone can do:
+<ul>
+  <!--
+  <li>lookup an item (todo)</li>
+  -->
+  <li><a href="{{ url_for('.deletions') }}">/del</a> Start or continue a Deletion form</li>
+</ul >
+{% endif %}
+
+{% endblock %}

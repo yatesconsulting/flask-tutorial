@@ -1,0 +1,299 @@
+{% extends 'duplicate_cleanup/index.html' %}
+
+{% block title %}Dupset {{ headerinfo.dupset }} Cleanup{% endblock %}
+
+{% block content %}
+
+<script>
+    // do these couple global things on page load:
+    let a  = {{ sqlinfo.guts | safe }};
+    // console.log(a[234])
+  // console.log(b[234]);
+  // a = //JSON.parse({{ sqlinfo.guts }});
+  //  {234: "field3=T1.field3" };
+  // const myJSON = JSON.stringify(a);
+  // console.log(myJSON);
+  // {"222":["field3=T1.field3"]}
+  
+  // >>> import json
+  // >>> a = {'222':['blah=fdjsal','fsjkl=fdsjka']}
+  // >>> json.dumps(a)
+  // '{"222": ["blah=fdjsal", "fsjkl=fdsjka"]}'
+  
+  
+  // const myObj = { name: "John", age: 31, city: "New York" };
+  // const myJSON = JSON.stringify(myObj);
+  // localStorage.setItem("testJSON", myJSON);
+  
+  // // Retrieving data:
+  // let text = localStorage.getItem("testJSON");
+  // let obj = JSON.parse(text);
+  // document.getElementById("demo").innerHTML = obj.age;
+</script><script>
+
+function toggleClass(el) {
+  var x = document.getElementsByClassName(el);
+  var style = getComputedStyle(x[0]);
+  var s = style.display
+  // toggle the entire class the same way, even if individual elements somehow got out of sync
+  var i;
+  for (i = 0; i < x.length; i++) {
+    if (s == "none") {
+      x[i].style.display = "block"; // none of these work great
+      x[i].style.display = "inline-block"; 
+      x[i].style.display = "inline"; 
+    } else {
+      x[i].style.display = "none";
+    }
+  } 
+}
+</script><script>
+function displayClass(cl) {
+  let els = [];    
+  if (cl == "all"){
+    // make el into els list and loop over the list every time
+    els =  ["auto", "sql", "key"];
+  } else {
+    // put the one value of el into the list
+    els = [cl];
+  }
+
+  for (const el of els){
+    var x = document.getElementsByClassName(el);
+    // var style = getComputedStyle(x[0]);
+    // var s = style.display
+    // toggle the entire class the same way, even if individual elements somehow got out of sync
+    var i;
+    for (i = 0; i < x.length; i++) {
+      // if (s == "none") {
+        x[i].style.display = "inline"; 
+      // }
+    } 
+  }
+}
+</script><script>
+function selectFixSQLsets(elmnt) {
+    // let str = JSON.stringify(elmnt, null, 4); 
+    // document.getElementById("blah").innerHTML = elmnt.value; 
+    // document.getElementById("blah").innerHTML = a[arr[0]]
+    // window.alert("in selectFixSQLsets " + elmnt.id);
+    // console.log(5 + 6);
+  
+    // loop over all elements in a[arr[0]], replacing any that start with arr[1]= with the new value
+    // then join all of them together with ,'s and put them 
+  
+  
+    // all elements should have a . splittable ID
+    // select options will be ###.field, other box under is ###.field.custom
+    //   where ### is the dipid (dup in process id)
+    // document.getElementById("mySelect").selectedIndex = "-1";  // clears selected options
+  
+    let index = -1;
+    arr = elmnt.id.split(".")
+    let lenfield = arr[1].length; 
+    for (var i = 0; i < a[arr[0]].length; i++) {
+      val = a[arr[0]][i];
+      if (val.substring(0, lenfield) == arr[1]){
+         index = i;
+      }
+    }
+  
+  
+    let ival = ""
+    let selectboxid = arr[0] + "." + arr[1];
+    let customselectboxid = arr[0] + "." + arr[1] + ".custom";
+    // 4 ways a custom field might be manipulated
+    // 1 if custom field and blank, then del SQL, clear the select box
+    if (elmnt.value == "" && arr[2]) {
+      // console.log(1)
+      if (index != -1) {
+        a[arr[0]].splice(index, 1)
+      }
+      document.getElementById(selectboxid).selectedIndex = -1;
+      
+    // 2 else if field blank, then del SQL, clear any custom val
+    } else if (elmnt.value == "") {
+      // console.log(2)
+      if (index != -1) {
+        a[arr[0]].splice(index, 1)
+      }
+    
+    // 3 else if custom then move option to Other and update/insert SQL
+    } else if (arr[2]) {
+      // console.log(3)
+      if (elmnt.value == "getdate()"){
+        ival = arr[1] + "=getdate()";
+      } else {
+        ival = arr[1] + "='" + elmnt.value + "'";
+      }
+        // var isitdisabled = document.getElementById(selectboxid).options.disabled
+        // if (!isitdisabled) {
+        //   document.getElementById(selectboxid).options.disabled = true;
+        //}
+        let lastchoice = document.getElementById(selectboxid).options.length - 1;
+        // this disable didn't work, and should not be needed
+        // document.getElementById(selectboxid).suspendEvent('change');
+        document.getElementById(selectboxid).selectedIndex = lastchoice;
+        // document.getElementById(selectboxid).resumeEvent('change');
+        // if (!isitdisabled) {
+        //   document.getElementById(selectboxid).options.disabled = false;
+        // }
+        if (index == -1) {
+          a[arr[0]].push(ival);
+        } else {
+          a[arr[0]][index] = ival;
+        }
+    
+    // 4 else not custom and has value => update/insert SQL and leave selection, blank custom
+    } else {
+      // console.log(4)
+        ival = arr[1] + "=" + elmnt.value + "." + arr[1]
+        document.getElementById(customselectboxid).value = "";
+        if (index == -1) {
+          a[arr[0]].push(ival);
+        } else {
+          a[arr[0]][index] = ival;
+        }
+    }
+  
+    if (a[arr[0]].length == 0) {
+      document.getElementById("sql" + arr[0]).querySelector(".guts").innerHTML = "-- nothing to update here ... ";
+    } else {
+      document.getElementById("sql" + arr[0]).querySelector(".guts").innerHTML = "update T0 set " + a[arr[0]].join(", ");
+    }
+  }
+</script>
+<style>
+  select { min-width: 100px; }
+  select option { font-size: 16pt; }
+  /* .same { display: none; background-color: #4da6ff;} */
+  /* .ignore { display: none; background-color:  #66b3ff; } */
+  .auto { display: none; background-color: #80bfff; }
+  .key { background-color: #adff99; } 
+  .needinput { background-color: #ffffcc; } 
+  .sql { display: none; 
+    background-color: #ffb3ff; } 
+  /* .hsame { background-color: #4da6ff;} */
+  /* .hignore { background-color:  #66b3ff; } */
+  .hauto { background-color: #80bfff; }
+  .hkey { background-color: #adff99; } 
+  .hneedinput { background-color: #ffffcc; } 
+  .hsql { background-color: #ffb3ff; } 
+select:required {
+  border-color: #800000;
+  border-width: 3px;
+}
+select:valid {
+  border: 1px solid black;
+}
+
+/* not used, but just to complete the required suite 
+select:required:invalid {
+  border-color: #c00000;
+}*/
+</style>
+
+    <h2>goodid: {{ headerinfo.goodid }} with ids {{ headerinfo.ids }}</h2>
+  </td>
+<td style="text-align:right;">
+  <a href="#" onclick='toggleClass("auto")' class="hauto">Toggle autofilled fields</a><br />
+  <!-- <a href="#" onclick='toggleClass("ignore")' class="hignore">Toggle ignorable fields</a><br /> -->
+  <a href="#" onclick='toggleClass("needinput")' class="hneedinput">Toggle fields that need input</a><br />
+  <a href="#" onclick='toggleClass("key")' class="hkey">Toggle fields with key values</a><br />
+  <!-- <a href="#" onclick='toggleClass("same")' class="hauto">Toggle fields  with all the Same values</a><br /> -->
+  <a href="#" onclick='toggleClass("sql")' class="hsql">Toggle SQL fields</a><br />
+  <a href="#" onclick='displayClass("all")'>Show all fields</a>
+</td>
+</tr>
+</table>
+
+<form>  
+{% for row in rows %}
+{% if loop.changed(row.dipid) %}
+  <hr style="height:30px; color:red;" />
+  <table border="0" cellpadding="0" cellspacing="0" width="100%">
+    <tr>
+      <td>
+        <h2>--- <a name="{{ row.dipid }}">{{ row.table }}</a> ---</h2>
+        {% if row.xkeys %}
+        <h3>-- Extra Keys: {{ row.xkeys }} --</h3>
+        {% endif %}
+        <h3>-- DIPid {{ row.dipid }}</h3>
+        <!-- 
+        <label for="shuffle{{ row.dipid }}">Shuffle {{ row.dipid }} instead, on field</label>
+        <select name="shuffle{{ row.dipid }}" id="shuffle{{ row.dipid }}">
+        <option value=""></option>
+        <option value="">cols</option>
+        <option value="">from</option>
+        <option value="">table</option>
+        <option value="">somehow</option>
+        </select><br />
+        -->
+      
+        <div class="sql {{ row.dipid }}sql" id="sql{{ row.dipid }}">
+          {{ sqlinfo["precheck" ~ row.dipid] | safe }}
+          <span class="guts"></span> 
+          {{ sqlinfo[row.dipid] | safe }}
+          </div>
+          
+      </td>
+      <td style="text-align:right;">
+        <a href="#{{ row.dipid }}" onclick='toggleClass("{{ row.dipid }}auto")' class="hauto">Toggle {{ row.dipid }} autofilled fields</a><br />
+        <!-- <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}ignore")' class="hignore">Toggle {{ row.dipid }} ignorable fields</a><br /> -->
+        <a href="#{{ row.dipid }}" onclick='toggleClass("{{ row.dipid }}needinput")' class="hneedinput">Toggle {{ row.dipid }} fields that need input</a><br />
+        <a href="#{{ row.dipid }}" onclick='toggleClass("{{ row.dipid }}key")' class="hkey">Toggle {{ row.dipid }} key values</a><br />
+        <!-- <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}same")' class="hauto">Toggle {{ row.dipid }} fields with all the Same values</a><br /> -->
+        <a href="#{{ row.dipid }}" onclick='toggleClass("{{ row.dipid }}sql")' class="hsql">Toggle {{ row.dipid }} SQL fields</a><br />
+        <a href="#{{ row.dipid }}" onclick='
+        displayClass("{{ row.dipid }}auto");
+        displayClass("{{ row.dipid }}sql");
+        displayClass("{{ row.dipid }}key")'>Show all {{ row.dipid }} fields</a>
+      </td>
+    </tr>
+  </table>
+  {% endif %}
+  
+<div class="{{ row.class }} {{ row.dipid }}{{ row.class }}" style="margin:10px;">
+  
+    <label for="{{ row.dipid }}.{{ row.field }}">{{ row.field }} </label>
+  
+    <br />
+  <select id="{{ row.dipid }}.{{ row.field }}" size="{{ headerinfo.ids|length +1 }}" required  {{ row.disabled }} onchange="selectFixSQLsets(this)">
+  {% for option in row.options %}
+  <option value="{{option.formval}}" {{ option.selected }} {{ option.disabled }}>{{ option.showval }}</option>
+  {% endfor %}
+  <option value="" disabled {% if row.custom %}selected{% endif %}>Other</option>
+  </select>
+  <input type="text" id="{{ row.dipid }}.{{ row.field }}.custom" onchange="selectFixSQLsets(this)" value="{{ row.custom }}" {{ row.customdisabled }}/><input type="button" value="Use Other" />
+
+  {% if row.choosekeys %}
+  <label for="ck{{ row.dipid }}">Add {{ row.field }} to key list of {{row.table}} {{ row.xkeys}}</label>
+    <input type="checkbox" name="ck{{ row.dipid }}" value="{{ row.field }}" id="ck{{ row.dipid }}">
+  {% else %}
+  <br />
+
+  {% endif %}
+
+</div>
+
+  
+{% endfor %}
+
+
+  <input type="submit" value="Submit">
+</form>
+
+<script>
+for (sqlnum in a) {
+  // console.log(sqlnum)
+  t = document.getElementById("sql" + sqlnum).querySelector(".guts")
+  // if (!t) {  console.log("can't find t for " + sqlnum) }
+  if (a[sqlnum].length == 0) {
+    t.innerHTML = "-- nothing to update here ... ";
+  } else {
+    t.innerHTML = "update T0 set " + a[sqlnum];
+  }
+}
+</script>
+  
+{% endblock %}
