@@ -358,7 +358,7 @@ def deletions():
                 return redirect(url_for('.deletions'))
         else:
             form.append('<h3>Make a new Deletion form and start scanning</h3>')
-            form.append('<label for="notes">Personal notes:</label><input type="text" id="notes" name="notes" size="50"><br />')
+            form.append('<label for="notes">Personal notes:</label><input type="text" id="notes" name="notes" ><br />')
             form.append('<label for="sdel">School Unit Deleteing Items:</label> <input type="text" id="sdel" name="sdel" value=""><br />')
             form.append('<label for="wo">Work Order Num:</label> <input type="text" id="wo" name="wo"><br />')
             form.append('<label for="creator">* Username of form owner:</label> <input type="text" id="creator" name="creator" value="{}" required><br />'.format(g.user['username']))
@@ -481,7 +481,7 @@ def deletions():
         v = headerinfo['notes']
         v = "" if v == None else v
         # return render_template('inventory/index.html',rows = ['472', v, id, headerinfo, headerinfo['notes'], headerinfo['notes'] == None, 'blah' if headerinfo['notes'] else 'oof'])
-        myform += '\n<label for="notes">Personal notes </label><input type="text" id="notes" name="notes" value="{}" size="50"><br />'.format(v)
+        myform += '\n<label for="notes">Personal notes </label><input type="text" id="notes" name="notes" value="{}" ><br />'.format(v)
 
         v = headerinfo['schooldeleting']
         v = "" if v == None else v
@@ -522,7 +522,7 @@ def deletions():
                 if myform[-7] != '10px;">':
                     myform += "<br />"
                 myform += 'Row {}\n<input type="text" value="{}" name="tag{}" size="6">'.format(row['id'], row['tag'], row['id'])
-                myform += '\n<input type="text" value="{}" name="description{}" size="30">'.format(row['description'], row['id'])
+                myform += '\n<input type="text" value="{}" name="description{}" >'.format(row['description'], row['id'])
                 myform += '\n<input type="text" value="{}" name="delcode{}" size="3">'.format(row['delcode'], row['id'])
                 myform += '\n<input type="text" value="{}" name="itinitials{}" size="3">'.format(row['itinitials'], row['id'])
                 myform += '\n<input type="text" value="{}" name="dateitcleared{}" size="15">'.format(row['dateitcleared'], row['id'])
@@ -533,7 +533,7 @@ def deletions():
 
         form.append('<br /><div style="border-radius: 10px; border:2px solid black; padding:10px;">')
         form.append('Add a New Row <input type="text" value="" name="newtag" size="6">')
-        form.append('<input type="text" value="" name="newdescription" size="30">')
+        form.append('<input type="text" value="" name="newdescription">')
         form.append('<input type="text" value="O" name="newdelcode" size="3">')
         form.append('<input type="text" value="{}" name="newitinitials" size="3">'.format(initials))
         form.append('<input type="text" value="{}" name="newdateitcleared" size="15">'.format(datetime.today().strftime('%m-%d-%Y')))
