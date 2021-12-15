@@ -243,7 +243,7 @@ def deletions():
         id = cur.execute("insert into invdelform (schooldeleting, workorder, notes, username) VALUES (?,?,?,?)", (sdel, wo, notes, creator)).lastrowid
         dbf.commit()
         cur.close()
-        submit = "Scan {}".format(id)
+        submit = "Smartphone scan to {}".format(id)
     elif re.match("^(Submit Tags)", submit) and not scanned:
         submit = "Edit {}".format(id)
     elif re.match("^(Submit Tags)", submit) and scanned:
@@ -309,13 +309,9 @@ def deletions():
             sql = "select *,(select count(distinct tag) from invdelformdetails where invid=F.id) as tagcount from invdelform F where F.active = 1 order by updated desc;"
             color = "AliceBlue"
             formtitle = "Active Deletion Forms"
-            myform = '<span style="align: right;"><a href="?show=inactive">View Inactive Forms</a></span>'
+            myform = '<p style="text-align: right;"><a href="?show=inactive">View Inactive Forms</a></p>'
         rows = _formfromdb(dbf, sql)
         # for r in/ rows:
-
-
-
-
         # return render_template('inventory/index.html',rows=[{'317 submit=':submit, 'rows':rows, 'sql':sql}])
 
         for f in rows:
@@ -347,11 +343,12 @@ def deletions():
 
             # myform += '<input type="submit" name="submit" value="View {}"> '.format(i)
             # myform += '\n<input type="submit" name="submit" value="Download {}"> '.format(i)
-            myform += '\n<input type="submit" name="submit" value="Edit {}"> '.format(i)
+            myform += '<br />\n<input type="submit" name="submit" value="Edit {}"> '.format(i)
             myform += '\n<input type="submit" name="submit" value="Smartphone scan to {}"> '.format(i)
             myform += '\n<input type="submit" name="submit" value="Barcode scan or 10key to {}"> '.format(i)
             myform += '\n</div><hr />'
             form.append(myform)
+            myform = ""
         if show:
             if not form:
                 flash("no {} forms found".format(show))
@@ -537,7 +534,7 @@ def deletions():
         form.append('<input type="text" value="O" name="newdelcode" size="3">')
         form.append('<input type="text" value="{}" name="newitinitials" size="3">'.format(initials))
         form.append('<input type="text" value="{}" name="newdateitcleared" size="15">'.format(datetime.today().strftime('%m-%d-%Y')))
-        form.append('<input type="submit" name="submit" value="Add New Detail line to Form {}">\n</div>\n'.format(id))
+        form.append('<input type="submit" name="submit" value="Add New Detail line to Form {}">\n</div><br />\n'.format(id))
        
         form.append('\n<input type="submit" name="submit" value="Smartphone scan to {}"> '.format(id))
         form.append('\n<input type="submit" name="submit" value="Barcode scan or 10key to {}"> '.format(id))

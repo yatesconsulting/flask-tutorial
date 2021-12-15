@@ -5,7 +5,7 @@ from ldap3 import Server, Connection, ALL, SUBTREE, OFFLINE_AD_2012_R2
 import re
 import sys
 sys.path.insert(0, '/var/www/flaskr') # required for from flaskr import
-from myflaskrsecrets import ldapserver, ldapuser, ldappwd, ldapdomain
+from myflaskrsecrets import ldapserver, ldapuser, ldappwd, ldapdomain, ldapdcroot
 
 class ADAuthenticated():
     def __init__(self, username, password=None):
@@ -21,9 +21,9 @@ class ADAuthenticated():
         llen = len(self.ldapdomain)
         if username and not re.search('[@\\\]',username):
             self.username = "{}{}".format(self.username, self.ldapdomain)
-            print("username tweaked to {}".format(self.username))
+            # print("username tweaked to {}".format(self.username)) # prints to error log
         self.password = password
-        self.base_dn = 'DC=risd,DC=k12,DC=nm,DC=us' # push this back to myflasksecrets someday
+        # self.base_dn = 'DC=risd,{}".format(ldapdcroot) # push this back to myflasksecrets someday
         # CN=ldap connector,OU=Non-MailboxUsers,DC=risd,DC=k12,DC=nm,DC=us
         # self.admin_dn = "OU=ADMIN,OU=RISD,{}".format(self.base_dn)
         # self.studentroot = "OU=STUDENTS,OU=RISD,{}".format(self.base_dn)
@@ -62,6 +62,26 @@ class ADAuthenticated():
     #         except:
     #             pass
     #     return None
+    def is_student(self):
+        '''returns True if under student OU'''
+        if self.password == '':
+            return False
+        try:
+            with Connection(self.ldap_server, user=self.username, password=self.password) as conn:
+                print("Description of result: {}".format(conn.result["description"])) # "success" if bind is ok
+                return conn.search(ldapdcroot,"(&(sAMAccountName={}))".format(self.username)
+            ,attributes=['memberOf'])
+                # print(conn.extend.standard.who_am_i())
+                
+        except:
+            print('Unable to connect to LDAP server')
+            return False
+
+        
+
+    def is_it(self):
+        ''' returns True if in ITDepartment group'''
+        pass
 
     def get_ADInfo(self):
         '''Uses service account to retrieve AD information. Since OU is not necessarily knowable (if web user arrives pre-authenticated and does not enter password), all OU connection DNs (see __init__ above) are tried. If information is not retrieved with one of the DN's or connection/binding otherwise fail, returns None.'''
@@ -116,6 +136,7 @@ if __name__ == '__main__':
     print("username={}".format(username))
     ad_conn = ADAuthenticated(username=username, password=password)
     # print("ad_conn.is_authentic()={}".format(ad_conn.is_authentic()))
+    print (ad_conn)
 
     def testPassAuth():
         #test is authenticated
@@ -142,5 +163,6 @@ if __name__ == '__main__':
     #         print ()
     #         print (groups['memberOf'])
     testPassAuth()
+    
     # testSearch()
     # testPeopleCode()
