@@ -1,6 +1,11 @@
 <!doctype html>
+<html>
+<head>
 <title>Intranet{% if pgtitle %} - {{ pgtitle }}{% endif %}</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+</head>
+<body>
 <nav>
   <h1><a href="{{ url_for('index') }}">Intranet</a></h1>
   <ul>
@@ -8,7 +13,6 @@
       <li><span>{{ g.user['username'] }}</span>
       <li><a href="{{ url_for('auth.logout') }}">Log Out</a>
     {% else %}
-      <!-- li><a href="{{ url_for('auth.register') }}">Register</a -->
       <li><a href="{{ url_for('auth.login') }}">Log In</a>
     {% endif %}
   </ul>
@@ -22,3 +26,5 @@
   {% endfor %}
   {% block content %}{% endblock %}
 </section>
+</body>
+</html>

@@ -1,10 +1,12 @@
 from flask import (
     Blueprint, flash, g, redirect, render_template, request, url_for, send_file
+    
 )
 from werkzeug.exceptions import abort
 
 from flaskr.auth import login_required
 from flaskr.db import get_db
+from flask.helpers import read_image, make_response
 from openpyxl import Workbook, load_workbook
 from openpyxl.writer.excel import save_virtual_workbook
 from openpyxl.styles import PatternFill, Border, Side, Alignment, Protection, Font
@@ -128,11 +130,11 @@ def _getdetailsfromtags(db, tags):
     return ans
     # return  [{'TagNumber':'57476','Description':'MS SURFACE PRO 4 M 128GB 4GB EDU BD Mfg#: TZ5-00001 Contract: MARKET Comes with keyboard type cas'},{'TagNumber':'57368','Description':'UAG SURFACE PRO 4 CASE - BLACK'}]
 
-def _inserttagsintodeletionsheet(tags):
-    # send a complete list with desc
-    for tag in tagwithdescription:
-        t = tag['TagNumber']
-        d = tag['Description']
+# def _inserttagsintodeletionsheet(tagwithdescription):
+#     # send a complete list with desc
+#     for tag in tagwithdescription:
+#         t = tag['TagNumber']
+#         d = tag['Description']
 
 
 @bp.route('/del', methods=["GET", "POST"])
@@ -243,7 +245,7 @@ def deletions():
         id = cur.execute("insert into invdelform (schooldeleting, workorder, notes, username) VALUES (?,?,?,?)", (sdel, wo, notes, creator)).lastrowid
         dbf.commit()
         cur.close()
-        submit = "Scan {}".format(id)
+        submit = "Smartphone scan to {}".format(id)
     elif re.match("^(Submit Tags)", submit) and not scanned:
         submit = "Edit {}".format(id)
     elif re.match("^(Submit Tags)", submit) and scanned:
@@ -309,13 +311,9 @@ def deletions():
             sql = "select *,(select count(distinct tag) from invdelformdetails where invid=F.id) as tagcount from invdelform F where F.active = 1 order by updated desc;"
             color = "AliceBlue"
             formtitle = "Active Deletion Forms"
-            myform = '<span style="align: right;"><a href="?show=inactive">View Inactive Forms</a></span>'
+            myform = '<p style="text-align: right;"><a href="?show=inactive">View Inactive Forms</a></p>'
         rows = _formfromdb(dbf, sql)
         # for r in/ rows:
-
-
-
-
         # return render_template('inventory/index.html',rows=[{'317 submit=':submit, 'rows':rows, 'sql':sql}])
 
         for f in rows:
@@ -347,18 +345,19 @@ def deletions():
 
             # myform += '<input type="submit" name="submit" value="View {}"> '.format(i)
             # myform += '\n<input type="submit" name="submit" value="Download {}"> '.format(i)
-            myform += '\n<input type="submit" name="submit" value="Edit {}"> '.format(i)
+            myform += '<br />\n<input type="submit" name="submit" value="Edit {}"> '.format(i)
             myform += '\n<input type="submit" name="submit" value="Smartphone scan to {}"> '.format(i)
             myform += '\n<input type="submit" name="submit" value="Barcode scan or 10key to {}"> '.format(i)
             myform += '\n</div><hr />'
             form.append(myform)
+            myform = ""
         if show:
             if not form:
                 flash("no {} forms found".format(show))
                 return redirect(url_for('.deletions'))
         else:
             form.append('<h3>Make a new Deletion form and start scanning</h3>')
-            form.append('<label for="notes">Personal notes:</label><input type="text" id="notes" name="notes" size="50"><br />')
+            form.append('<label for="notes">Personal notes:</label><input type="text" id="notes" name="notes" ><br />')
             form.append('<label for="sdel">School Unit Deleteing Items:</label> <input type="text" id="sdel" name="sdel" value=""><br />')
             form.append('<label for="wo">Work Order Num:</label> <input type="text" id="wo" name="wo"><br />')
             form.append('<label for="creator">* Username of form owner:</label> <input type="text" id="creator" name="creator" value="{}" required><br />'.format(g.user['username']))
@@ -481,7 +480,7 @@ def deletions():
         v = headerinfo['notes']
         v = "" if v == None else v
         # return render_template('inventory/index.html',rows = ['472', v, id, headerinfo, headerinfo['notes'], headerinfo['notes'] == None, 'blah' if headerinfo['notes'] else 'oof'])
-        myform += '\n<label for="notes">Personal notes </label><input type="text" id="notes" name="notes" value="{}" size="50"><br />'.format(v)
+        myform += '\n<label for="notes">Personal notes </label><input type="text" id="notes" name="notes" value="{}" ><br />'.format(v)
 
         v = headerinfo['schooldeleting']
         v = "" if v == None else v
@@ -522,7 +521,7 @@ def deletions():
                 if myform[-7] != '10px;">':
                     myform += "<br />"
                 myform += 'Row {}\n<input type="text" value="{}" name="tag{}" size="6">'.format(row['id'], row['tag'], row['id'])
-                myform += '\n<input type="text" value="{}" name="description{}" size="30">'.format(row['description'], row['id'])
+                myform += '\n<input type="text" value="{}" name="description{}" >'.format(row['description'], row['id'])
                 myform += '\n<input type="text" value="{}" name="delcode{}" size="3">'.format(row['delcode'], row['id'])
                 myform += '\n<input type="text" value="{}" name="itinitials{}" size="3">'.format(row['itinitials'], row['id'])
                 myform += '\n<input type="text" value="{}" name="dateitcleared{}" size="15">'.format(row['dateitcleared'], row['id'])
@@ -533,11 +532,11 @@ def deletions():
 
         form.append('<br /><div style="border-radius: 10px; border:2px solid black; padding:10px;">')
         form.append('Add a New Row <input type="text" value="" name="newtag" size="6">')
-        form.append('<input type="text" value="" name="newdescription" size="30">')
+        form.append('<input type="text" value="" name="newdescription">')
         form.append('<input type="text" value="O" name="newdelcode" size="3">')
         form.append('<input type="text" value="{}" name="newitinitials" size="3">'.format(initials))
         form.append('<input type="text" value="{}" name="newdateitcleared" size="15">'.format(datetime.today().strftime('%m-%d-%Y')))
-        form.append('<input type="submit" name="submit" value="Add New Detail line to Form {}">\n</div>\n'.format(id))
+        form.append('<input type="submit" name="submit" value="Add New Detail line to Form {}">\n</div><br />\n'.format(id))
        
         form.append('\n<input type="submit" name="submit" value="Smartphone scan to {}"> '.format(id))
         form.append('\n<input type="submit" name="submit" value="Barcode scan or 10key to {}"> '.format(id))
