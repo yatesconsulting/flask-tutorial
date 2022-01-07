@@ -4,10 +4,10 @@ import threading
 import time
 import queue
 import traceback
+import sys
+sys.path.insert(0, '/var/www/flaskr')
 from myflaskrsecrets import dbserver, dbname, dbuid, dbpwd
 
-# import sys
-# sys.path.insert(0, '/var/www/flaskr')
 # from myflaskrsecrets import dbserver, dbname, dbuid, dbpwd
 
 # http://www.pymssql.org/en/stable/ref/_mssql.html
@@ -47,12 +47,11 @@ class MSSQL_DB_Conn():
                                    Trusted_Connection='yes',
                                    appname=appname or 'Apps')
         else:
-            self.conn = _mssql.connect(server=self.server,
+            self.conn = _mssql.connect(server='domain1',
                                    user=self.user,
                                    password=self.password,
-                                   database=db)
-                                #    ,
-                                #    appname=appname or 'Apps')
+                                   database='web',
+                                   appname=appname or 'Apps')
 
         self.conn.debug_queries = debug
         ### self.log = Application_Logs().setup_logging()
@@ -248,3 +247,18 @@ class MSSQL_DB_Conn():
         finally:
             self.conn.close()
 
+############ command line testing
+
+###########################
+#the below is a manual test.
+if __name__ == '__main__':
+    
+    hey = MSSQL_DB_Conn()
+    print(hey.user)
+    print(hey.spid)
+    print(hey.conn)
+    sql = "select top 10 'h^y' as 'hey',name,type from sys.tables"
+    r = hey.execute_s(sql)
+    print (r)
+    for rr in r:
+        print(rr)

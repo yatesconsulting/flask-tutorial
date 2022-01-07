@@ -112,10 +112,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-*.lock
-*~
-.vimrc
-.env
 *.swp
 *Unused*
 secrets.py

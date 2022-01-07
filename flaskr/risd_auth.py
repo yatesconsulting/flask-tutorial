@@ -5,7 +5,7 @@ from ldap3 import Server, Connection, ALL, SUBTREE, OFFLINE_AD_2012_R2
 import re
 import sys
 sys.path.insert(0, '/var/www/flaskr') # required for from flaskr import
-from myflaskrsecrets import ldapserver, ldapuser, ldappwd, ldapdomain
+from myflaskrsecrets import ldapserver, ldapuser, ldappwd, ldapdomain, ldapdcroot
 
 class ADAuthenticated():
     def __init__(self, username, password=None):
@@ -18,17 +18,14 @@ class ADAuthenticated():
                                   get_info=self.ldap3_server_get_info)
         self.username = username
         self.ldapdomain = ldapdomain
+        self.groups = []
         llen = len(self.ldapdomain)
         if username and not re.search('[@\\\]',username):
             self.username = "{}{}".format(self.username, self.ldapdomain)
-            print("username tweaked to {}".format(self.username))
+            # print("username tweaked to {}".format(self.username))
         self.password = password
-        self.base_dn = 'DC=risd,DC=k12,DC=nm,DC=us' # push this back to myflasksecrets someday
-        # CN=ldap connector,OU=Non-MailboxUsers,DC=risd,DC=k12,DC=nm,DC=us
-        # self.admin_dn = "OU=ADMIN,OU=RISD,{}".format(self.base_dn)
-        # self.studentroot = "OU=STUDENTS,OU=RISD,{}".format(self.base_dn)
-        # CN=Bryan Yates,OU=ADMIN,OU=RISD,DC=risd,DC=k12,DC=nm,DC=us
-        # self.staff_dn = "OU=RISD,{}".format(self.base_dn)
+        # self.base_dn = 'DC=risd,DC=k12,DC=nm,DC=us' # push this back to myflasksecrets someday
+        self.authenticated = self.is_authentic()
 
     def is_authentic(self):
         '''Returns True if user authenticates against AD. False otherwise'''
@@ -36,111 +33,82 @@ class ADAuthenticated():
         if self.password == '':
             return False
         try:
+            # print("40 trying to connect to {} with username {}".format(self.ldap_server, self.username))
             with Connection(self.ldap_server, user=self.username, password=self.password) as conn:
                 # print("Description of result: {}".format(conn.result["description"])) # "success" if bind is ok
-                return True
+                # print("maybe {}".format(conn.entries)) # .memberOf.values))
+                conn.search(
+                    search_base=ldapdcroot,
+                    search_filter = "(&(userPrincipalName={}))".format(self.username),
+                    # search_scope='SUBTREE',
+                    attributes=['memberOf'])
+                for entry in conn.entries:
+                    for gp in entry.memberOf.values:
+                        # print ("entry: {}".format(gp))
+                        self.groups.append(gp)
+                if self.in_group("students"):
+                    return False
+                return True # bads will fail out via except
         except:
-            print('Unable to connect to LDAP server')
+            print('53 Unable to connect to LDAP server')
             return False
 
-        # for i in self.OU_groups:
-        #     con_string = self.OU_groups[i]
-        #     try:
-        #         self.connect = Connection(self.ldap_server, con_string, self.password, auto_bind=True, raise_exceptions=True)
-        #         return True
-        #     except:
-        #         pass
-        # return False
+    def refreshgroups(self):
+        try:
+            ans = ""
+            self.groups = []
+            with Connection(self.ldap_server, user=self.username, password=self.password) as conn:
+                # print("conN:{} Description of result: {}".format(str(conn), conn.result["description"])) # "success" if bind is ok
+                conn.search(
+                    search_base=ldapdcroot,
+                    search_filter = "(&(userPrincipalName={}))".format(self.username),
+                    # search_scope='SUBTREE',
+                    attributes=['memberOf'])
+                for entry in conn.entries:
+                    for gp in entry.memberOf.values:
+                        # print ("entry: {}".format(gp))
+                        self.groups.append(gp)
+                # ans = str(conn.entries).split("MemberOf: ")[-1]
+                # print("069 type{} ans;;;{};;;".format(type(ans), ans))
+                # line = 1
+                # for a in ans:
+                #     print("line{} ans {} split{}".format(line, a, a.split("\r")))
+                #     line += 1
+                    # [0].split("memberOf: ")[-1]
+                
+        except:
+            print('80 Unable to connect to LDAP server {} as {}'.format(str(self.ldap_server), self.username))
+            return False
 
-    # def find_OU(self):
-    #     '''Returns group top level OU group of user or None if not authed'''
-    #     for i in self.OU_groups:
-    #         con_string = self.OU_groups[i]
-    #         try:
-    #             self.connect = Connection(self.ldap_server, con_string, self.password, auto_bind=True)
-    #             return i 
-    #         except:
-    #             pass
-    #     return None
+    def in_group(self, group=""):
+        regexp = re.compile('^cn={},'.format(group.lower()))
 
-    def get_ADInfo(self):
-        '''Uses service account to retrieve AD information. Since OU is not necessarily knowable (if web user arrives pre-authenticated and does not enter password), all OU connection DNs (see __init__ above) are tried. If information is not retrieved with one of the DN's or connection/binding otherwise fail, returns None.'''
-        service_account_name = ldapuser
-        service_account_password = ldappwd
-        service_connection_string = "CN=ldap connector,OU=Non-MailboxUsers,DC=risd,DC=k12,DC=nm,DC=us"
-        connect = Connection(self.ldap_server, service_connection_string, service_account_password, auto_bind=True)
-        requested_user_attributes = ['displayName', 'sn', 'givenName', 'mail']
+        if self.password == '':
+            return False
+        if not self.groups:
+            # print("refreshing groups")
+            self.refreshgroups()
 
-        user_info = {}
-        for OU_friendly_name in self.OU_groups.keys():
-            try:
-                user_found = connect.search(search_base = self.OU_groups[OU_friendly_name], search_scope = SUBTREE, search_filter = ('(sAMAccountName=%s)' % self.username), attributes = requested_user_attributes)
-                if user_found is not True:
-                    continue
-                    
-                user_info['OU'] = OU_friendly_name
-                ldap_user_search_result = connect.response[0]
-                for requested_user_attribute in requested_user_attributes:
-                    user_info[requested_user_attribute] = ldap_user_search_result['attributes'][requested_user_attribute]
-                    if self.ldap3_server_get_info == None:
-                        # Schema was loaded neither from server nor from an offline model
-                        # This causes single items to be returned as the lone elements of
-                        # lists when they would otherwise be returned as values.
-                        try:
-                            user_info[requested_user_attribute] = user_info[requested_user_attribute][0]
-                        except IndexError:
-                            # When the attribute does not have a value, AD returns an empty list.
-                            user_info[requested_user_attribute] = None
-                user_distinguished_name = ldap_user_search_result["dn"]
-                connect.search(search_base = "OU=Groups,DC=NMMI,DC=local",
-                               search_scope = SUBTREE,
-                               #member:1.2.840.113556.1.4.1941: means recursive group membership
-                               search_filter = f"(member:1.2.840.113556.1.4.1941:={user_distinguished_name})",
-                               attributes = None)
-                user_info['memberOf'] = [re.search('^CN=([^,]+)',entry["dn"]).group(1) for entry in connect.response]
-                break
-            except Exception as e:
-                print(e, "error")
-                pass
-
-        if 'OU' in user_info:
-            return user_info
+        if group == "":
+            return self.groups
         else:
-            return None
+            for g in self.groups:
+                # user_info['memberOf'] = [re.search('^CN=([^,]+)',entry["dn"]).group(1) for entry in connect.response]
+                if regexp.search(g.lower()): # bool(re.search('^cn={},'.format(group.lower()), g.lower)) fails for some reason
+                    return True
+            return False
+
 ###########################
 #the below is a manual test.
 if __name__ == '__main__':
     import getpass
     username = input('username? ')
     password = getpass.getpass('Password? ')
-    print("username={}".format(username))
+    # print("username={}".format(username))
     ad_conn = ADAuthenticated(username=username, password=password)
-    # print("ad_conn.is_authentic()={}".format(ad_conn.is_authentic()))
+    print ("ad_conn.is_authentic()={}".format(ad_conn.is_authentic()))
+    print ("ad_conn.authenticated = {}".format(ad_conn.authenticated))
+    print ("in IT? {}".format(ad_conn.in_group('ITDEpartment')))
+    print ("in students? {}".format(ad_conn.in_group('students')))
+    print ("all groups = {}".format(ad_conn.groups))
 
-    def testPassAuth():
-        #test is authenticated
-        print ('***************\n')
-        print ('Authentication Result:')
-        if ad_conn.is_authentic():
-            print ('Authenticate with username,password:')
-            print ('Passed\n\n')
-        else:
-            print ('Fail\n\n')
-        #test top level OU membership
-        # group = ad_conn.find_OU()
-        # if group is not None:
-        #     print ('Group Membership: \n%s' % group)
-        # else:
-        #     print ('Not authenticated or member of no groups')
-    
-    # def testSearch():
-    #     groups = ad_conn.get_ADInfo()
-    #     if groups is None:
-    #         print ('error, AD groups not found')
-    #     else:
-    #         print (groups)
-    #         print ()
-    #         print (groups['memberOf'])
-    testPassAuth()
-    # testSearch()
-    # testPeopleCode()

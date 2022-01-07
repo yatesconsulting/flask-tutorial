@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block header %}
-  <h2>{% block title %}Inventory - {{ pgtitle }}{% endblock %}</h2>
+  <h2>{% block title %}Inventory{% endblock %}</h2>
 {% endblock %}
 
 {% block content %}
@@ -13,6 +13,7 @@
 
   <body>
     <form method="POST">
+      <input type="hidden" name="id" value="{{ id }}">
     <section id="container" class="container">
       <table style="width:100%;">
         <tr>
@@ -20,7 +21,7 @@
             Scan count: <b><span id="scancount"></span></b>
           </td>
           <td style="text-align:right; width: 50%;">
-            <input type="submit" value="Submit Codes" style="vertical-align: middle;">
+            <input type="submit" value="Submit Tags" name="submit" style="vertical-align: middle;">
           </td>
         </tr>
       </table>           
@@ -31,7 +32,7 @@
             <ul class="collector"></ul>
             </div>
     </section>
-    <input type="submit" id="cancel" value="Cancel">
+    <input type="submit" id="cancel" name="submit" value="Cancel">
 </form>
 
 
