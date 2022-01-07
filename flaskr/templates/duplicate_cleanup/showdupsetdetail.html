@@ -207,8 +207,9 @@ select:required:invalid {
 </tr>
 </table>
 
-<form>  
-{% for row in rows %}
+<form id="f1">  
+  <input type="submit" id="submit" value="Check for missing required fields" onclick="myFunction(); return false;">
+  {% for row in rows %}
 {% if loop.changed(row.dipid) %}
   <hr style="height:30px; color:red;" />
   <table border="0" cellpadding="0" cellspacing="0" width="100%">
@@ -232,8 +233,7 @@ select:required:invalid {
       
         <div class="sql {{ row.dipid }}sql" id="sql{{ row.dipid }}">
           {{ sqlinfo["precheck" ~ row.dipid] | safe }}
-          <span class="guts"></span> 
-          {{ sqlinfo[row.dipid] | safe }}
+          <span class="guts"></span>{{ sqlinfo[row.dipid] | safe }}
           </div>
           
       </td>
@@ -280,8 +280,16 @@ select:required:invalid {
 {% endfor %}
 
 
-  <input type="submit" value="Submit">
 </form>
+<script>
+function myFunction() {
+  const inpFrm = document.getElementById("f1");
+  anc = document.getElementById("submit");
+  if (inpFrm.reportValidity()) {
+    anc.value = "All required form fields done!"
+  } 
+} 
+</script>
 
 <script>
 for (sqlnum in a) {

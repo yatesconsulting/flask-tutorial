@@ -14,6 +14,7 @@ class Dupset():
         self.jdbname = ""
         self.dbname = dbname
         self.ids = []
+        self.appids = []
         self.goodid = 0
         self.status = "" # started, needs keys, ready, staged?, complete?
         self.formheaderinfo = {}
@@ -342,13 +343,13 @@ class Dupset():
             tdels = []
             for index, item in enumerate(T):
                 if index == 0:
-                    tjoins.append("from {} T0 ".format(table))
+                    tjoins.append(" from {} T0 ".format(table))
                 else:
-                    tjoins.append("join {} T{} on T{}.{} = {} {}".format(table, index, index, self._id_num, item, axkeys))
-                    tdels.append("delete from {} where {} = {} {}<br />".format(table, self._id_num, item, axkeys))
+                    tjoins.append(" join {} T{} on T{}.{} = {} {}".format(table, index, index, self._id_num, item, axkeys))
+                    tdels.append("<br>delete from {} where {} = {} {}".format(table, self._id_num, item, axkeys))
                     # need to triple check this works with one bad id
-            tjoins.append("where T0.{} = {} {}<br />".format(self._id_num, T[0], axkeys))
-            self.sqlinfo[dipid] = "{}".format('<br />'.join(tjoins + tdels))
+            tjoins.append("where T0.{} = {} {} ".format(self._id_num, T[0], axkeys))
+            self.sqlinfo[dipid] = "{}".format(' '.join(tjoins + tdels))
 
             # self.sqlinfo = {'guts':"{234:['field3=T1.field3','duh=T2.duh']}",
             #         234:"ffffrom NAME_TYPE_TABLE T0  join NAME_TYPE_TABLE T1 on T1.ID_NUM = 4357237 and blah=blah,s=s join NAME_TYPE_TABLE T2 on T2.ID_NUM = 4366909 and blah=blah,s=s where T0.ID_NUM = 436313 and blah=blah,s=s1<br />delete from NM where ID_NUM = 4357237 and blah=blah,s=s1<br />delete from NM where ID_NUM = 4366909 and blah=blah,s=s1"}
@@ -461,13 +462,14 @@ class Dupset():
             tablelist = self._listalltableswithid_numcolumns()
             # tablelist = [{'tablename':'TRANSCRIPT_HEADER'}]
             for t in tablelist:
-                self._table = t['tablename']
+                self._table = table =  t['tablename']
                 self._id_num = t['ID_NUM']  # 'id_num' ok here
-                table = t['tablename']
+                # table = t['tablename']
                 cols = self._colsfromtable(table) # prob redunant from self.db.columns ?
                 extrakeys = self._dupextrakeysuniqvaluekeys(table)
                 # extrakeys = [{'YR':2017, 'TRM':10}, {'YR':2017, 'TRM':20}, {'YR':2017, 'TRM':30}]
                 helpme = ""
+                # try:
                 if extrakeys:
                     for ek in extrakeys:
                         s = self._idsintable(table, ek)
@@ -487,6 +489,8 @@ class Dupset():
                         helpme = "HELPME"
                     if s:
                         self._insertintodiptable(table, helpme)
+                # except Exception as e:
+                #     pass # skeip tables with errors in xkeys TODO fix
             self.update_status()
 
         # now self.status should be either "needs keys" or  "ready
@@ -513,7 +517,7 @@ class Dupset():
 ###########################
 #the below is a manual test.
 if __name__ == '__main__':
-    dupset = 2
+    dupset = 84
     sumpin = Dupset(dupset)
     # print(sumpin.error)
     # print(sumpin.ids)
