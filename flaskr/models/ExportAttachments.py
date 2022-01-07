@@ -13,7 +13,8 @@ sql = """Select replace(isnull(ATTACHMENT_NAME,'')
 		 + '.' + isnull(FORMAT_CDE,'Txt') -- fail safe, and look strange		 
 		 ,' ','') as ReportFileName
          , Attachment
-         FROM {}..Attachment where attachment_id={};""".format('TmsEPly',92509)
+         FROM {}..Attachment order by 1;""".format('TmsEPly')
+        #  FROM {}..Attachment  where attachment_id={} order by 1;""".format('TmsEPly',92509)
 # print(sql)
 db = pyodbc_db.MSSQL_DB_Conn()
 # conn = pymssql.connect(server="<server IP/URL>",user="<username>",password="<password>",database="<datebase_name>")
@@ -23,7 +24,7 @@ row = cursor.fetchall()
 for i in row:
     try:
         # print(repr(i[1]))
-        with open(i[0], 'wb') as outfile:
+        with open("Attachments\\{}".format(i[0]), 'wb') as outfile:
             outfile.write(i[1])
             outfile.close()
             print("Filename Saved as: " + i[0])
