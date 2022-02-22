@@ -39,8 +39,8 @@ cd flasktest
 py -m venv py_venv
 py_env\Scripts\activate
 pip install ..\flaskr-1.0.0-py3-none-any.whl
-set FLASK_APP=flaskr rem
-set FLASK_DEBUG=1 rem reloads on any file changes
+set FLASK_APP=flaskr && rem Windows
+set FLASK_DEBUG=1 && rem reloads on any file changes
 export FLASK_APP=flaskr # linux
 export FLASK_DEBUG=1
 flask init-db

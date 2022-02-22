@@ -3,7 +3,8 @@ import os
 
 import sys
 sys.path.insert(0, '/var/www/flaskr')
-# sys.path.insert(0, 'C:/Users/bryany/Desktop/GitHub/flask-tutorial')
+# use ^ ^at place 1, vvv for place 2
+sys.path.insert(0, 'C:/Users/bryany/Desktop/GitHub/flask-tutorial')
 from myflaskrsecrets import secret_key
 
 def create_app(test_config=None):

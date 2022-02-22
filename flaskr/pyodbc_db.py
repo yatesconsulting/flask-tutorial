@@ -7,6 +7,7 @@ import queue
 import traceback
 import sys
 sys.path.insert(0, '/var/www/flaskr')
+sys.path.insert(0, 'C:/Users/bryany/Desktop/GitHub/flask-tutorial')
 from myflaskrsecrets import dbserver, dbname, dbuid, dbpwd
 
 # http://www.pymssql.org/en/stable/ref/_mssql.html
@@ -113,7 +114,7 @@ class MSSQL_DB_Conn():
             self.spid = row[0]
 
         
-    def execute_i_u_d(self, sql, params=None):
+    def execute_i_u_d(self, sql, params=[]):
         """
         Run the passed sql command for the INSERT, UPDATE or DELETE.
 
@@ -138,7 +139,9 @@ class MSSQL_DB_Conn():
                                  daemon=True)
 
             sql_performance_monitor_thread.start()
-            self.cursor.execute(sql, params)
+            self.cursor.execute(sql, params) 
+            # linux?
+            # self.cursor.execute(sql, []) # Windows
             self.conn.commit()
             sql_completion_queue.put("query complete")
 
@@ -150,7 +153,7 @@ class MSSQL_DB_Conn():
             ###                    f"{sql}. Params: {params}")
             return False  # e
 
-    def execute_s(self, sql, params=None, col_headers=True):
+    def execute_s(self, sql, params=[], col_headers=True):
         """
         Execute SELECT based statement, including stored procedure.
 
@@ -179,7 +182,8 @@ class MSSQL_DB_Conn():
                                  daemon=True)
 
             sql_performance_monitor_thread.start()
-            self.cursor.execute(sql, params)
+            self.cursor.execute(sql, params) #  testing with params=[] as default, vs None
+            # self.cursor.execute(sql, params) # fails in windows
             sql_completion_queue.put("query complete")
 
             self.columns = [column[0] for column in self.cursor.description]
@@ -189,6 +193,7 @@ class MSSQL_DB_Conn():
                 results.append(dict(zip(self.columns, row)))
                 count += 1
             self.record_count = count
+            # print('maybe the count is {}'.format(count))
             return results
 
         except Exception:
@@ -307,6 +312,7 @@ if __name__ == '__main__':
     print(hey.spid)
     print(hey.conn)
     sql = "select top 10 name,type from sys.tables"
+    # sql = "select getdate() from sys.tables"
     r = hey.execute_s(sql)
     for rr in r:
         print(rr)

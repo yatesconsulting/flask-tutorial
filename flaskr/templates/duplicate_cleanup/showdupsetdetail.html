@@ -7,28 +7,6 @@
 <script>
     // do these couple global things on page load:
     let a  = {{ sqlinfo.guts | safe }};
-    // console.log(a[234])
-  // console.log(b[234]);
-  // a = //JSON.parse({{ sqlinfo.guts }});
-  //  {234: "field3=T1.field3" };
-  // const myJSON = JSON.stringify(a);
-  // console.log(myJSON);
-  // {"222":["field3=T1.field3"]}
-  
-  // >>> import json
-  // >>> a = {'222':['blah=fdjsal','fsjkl=fdsjka']}
-  // >>> json.dumps(a)
-  // '{"222": ["blah=fdjsal", "fsjkl=fdsjka"]}'
-  
-  
-  // const myObj = { name: "John", age: 31, city: "New York" };
-  // const myJSON = JSON.stringify(myObj);
-  // localStorage.setItem("testJSON", myJSON);
-  
-  // // Retrieving data:
-  // let text = localStorage.getItem("testJSON");
-  // let obj = JSON.parse(text);
-  // document.getElementById("demo").innerHTML = obj.age;
 </script><script>
 
 function toggleClass(el) {
@@ -157,9 +135,9 @@ function selectFixSQLsets(elmnt) {
     }
   
     if (a[arr[0]].length == 0) {
-      document.getElementById("sql" + arr[0]).querySelector(".guts").innerHTML = "-- nothing to update here ... ";
+      document.getElementById("sql" + arr[0]).querySelector(".buttondiv").querySelector(".code").querySelector(".guts").innerHTML = "-- nothing to update here ... ";
     } else {
-      document.getElementById("sql" + arr[0]).querySelector(".guts").innerHTML = "update T0 set " + a[arr[0]].join(", ");
+      document.getElementById("sql" + arr[0]).querySelector(".buttondiv").querySelector(".code").querySelector(".guts").innerHTML = "update T0 set " + a[arr[0]].join(", ");
     }
   }
 </script>
@@ -193,7 +171,7 @@ select:required:invalid {
 }*/
 </style>
 
-    <h2>goodid: {{ headerinfo.goodid }} with ids {{ headerinfo.ids }}</h2>
+    <h2>good id listed first {{ headerinfo.ids }}</h2>
   </td>
 <td style="text-align:right;">
   <a href="#" onclick='toggleClass("auto")' class="hauto">Toggle autofilled fields</a><br />
@@ -208,7 +186,11 @@ select:required:invalid {
 </table>
 
 <form id="f1">  
-  <input type="submit" id="submit" value="Check for missing required fields" onclick="myFunction(); return false;">
+  <input type="submit" id="submit" value="Check for missing required fields" onclick="checkRequiredFormFields(); return false;">
+  <div class="sql buttondiv" style="width: 600px; border-style: solid; border-radius:10px; padding:5px; background-color:#ffb3ff;">
+    <pre class="code">BEGIN TRANSACTION -- rollback if disaster strikes</pre>
+    <button type="button" onclick="copybutton(this)" onmouseout="renamebutton(this)">Copy text</button>
+    </div>
   {% for row in rows %}
 {% if loop.changed(row.dipid) %}
   <hr style="height:30px; color:red;" />
@@ -219,7 +201,7 @@ select:required:invalid {
         {% if row.xkeys %}
         <h3>-- Extra Keys: {{ row.xkeys }} --</h3>
         {% endif %}
-        <h3>-- DIPid {{ row.dipid }}</h3>
+        <h3>-- DIPid {{ row.dipid }} with counts {{ row.cnt }}</h3>
         <!-- 
         <label for="shuffle{{ row.dipid }}">Shuffle {{ row.dipid }} instead, on field</label>
         <select name="shuffle{{ row.dipid }}" id="shuffle{{ row.dipid }}">
@@ -232,9 +214,8 @@ select:required:invalid {
         -->
       
         <div class="sql {{ row.dipid }}sql" id="sql{{ row.dipid }}">
-          {{ sqlinfo["precheck" ~ row.dipid] | safe }}
-          <span class="guts"></span>{{ sqlinfo[row.dipid] | safe }}
-          </div>
+        {{ sqlinfo[row.dipid] | safe }}
+        </div>
           
       </td>
       <td style="text-align:right;">
@@ -253,6 +234,7 @@ select:required:invalid {
   </table>
   {% endif %}
   
+  {% if row.options %}
 <div class="{{ row.class }} {{ row.dipid }}{{ row.class }}" style="margin:10px;">
   
     <label for="{{ row.dipid }}.{{ row.field }}">{{ row.field }} </label>
@@ -265,6 +247,7 @@ select:required:invalid {
   <option value="" disabled {% if row.custom %}selected{% endif %}>Other</option>
   </select>
   <input type="text" id="{{ row.dipid }}.{{ row.field }}.custom" onchange="selectFixSQLsets(this)" value="{{ row.custom }}" {{ row.customdisabled }}/><input type="button" value="Use Other" />
+{% endif %}
 
   {% if row.choosekeys %}
   <label for="ck{{ row.dipid }}">Add {{ row.field }} to key list of {{row.table}} {{ row.xkeys}}</label>
@@ -275,26 +258,42 @@ select:required:invalid {
   {% endif %}
 
 </div>
-
-  
 {% endfor %}
+<div class="sql buttondiv" style="width: 600px; border-style: solid; border-radius:10px; padding:5px; background-color:#ffb3ff;">
+  <pre class="code">-- rollback</pre>
+  <button type="button" onclick="copybutton(this)" onmouseout="renamebutton(this)">Copy text</button>
+  </div>
 
 
 </form>
 <script>
-function myFunction() {
+function checkRequiredFormFields() {
   const inpFrm = document.getElementById("f1");
   anc = document.getElementById("submit");
   if (inpFrm.reportValidity()) {
     anc.value = "All required form fields done!"
   } 
 } 
-</script>
 
-<script>
+function copybutton(buttonid) {
+  var copyText = buttonid.previousElementSibling;
+  var clp = copyText.innerHTML
+  clp = clp.replace('<span class="guts">','');
+  clp = clp.replace('</span>','');
+  clp.replace("<","WHAT");
+  navigator.clipboard.writeText(clp);
+  buttonid.innerHTML = "Copied";
+  return False;
+}
+
+function renamebutton(buttonid) {
+  buttonid.innerHTML = "Copy again";
+  return False;
+}
+
 for (sqlnum in a) {
   // console.log(sqlnum)
-  t = document.getElementById("sql" + sqlnum).querySelector(".guts")
+  t = document.getElementById("sql" + sqlnum).querySelector(".buttondiv").querySelector(".code").querySelector(".guts")
   // if (!t) {  console.log("can't find t for " + sqlnum) }
   if (a[sqlnum].length == 0) {
     t.innerHTML = "-- nothing to update here ... ";
