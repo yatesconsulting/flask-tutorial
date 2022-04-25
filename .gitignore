@@ -117,3 +117,5 @@ dmypy.json
 secrets.py
 myflaskrsecrets.py
 Attachments/
+flaskr/Scripts/flask.exe
+flaskr/Scripts/python.exe

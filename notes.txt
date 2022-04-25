@@ -50,6 +50,7 @@ python -c "import os; print(os.urandom(16))" >> "C:\Program Files\Python38\var\f
 vi  "C:\Program Files\Python38\var\flaskr-instance\config.py"
 -- add SECRET_KEY =  to front, or better yet, in mypysecrets.py
 flask run (for :5000 testing and debugging)
+flask run --host=0.0.0.0 (to add remote access, still on :5000)
 pip install waitress
 waitress-serve --call "flaskr:create_app"
 

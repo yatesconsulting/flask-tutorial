@@ -1,6 +1,6 @@
 {% extends 'duplicate_cleanup/index.html' %}
 
-{% block title %}Dupset {{ headerinfo.dupset }} Cleanup{% endblock %}
+{% block title %}-- Dupset {{ headerinfo.dupset }} Cleanup{% endblock %}
 
 {% block content %}
 
@@ -137,7 +137,7 @@ function selectFixSQLsets(elmnt) {
     if (a[arr[0]].length == 0) {
       document.getElementById("sql" + arr[0]).querySelector(".buttondiv").querySelector(".code").querySelector(".guts").innerHTML = "-- nothing to update here ... ";
     } else {
-      document.getElementById("sql" + arr[0]).querySelector(".buttondiv").querySelector(".code").querySelector(".guts").innerHTML = "update T0 set " + a[arr[0]].join(", ");
+      document.getElementById("sql" + arr[0]).querySelector(".buttondiv").querySelector(".code").querySelector(".guts").innerHTML = "-- update T0 set " + a[arr[0]].join(", ");
     }
   }
 </script>
@@ -171,26 +171,26 @@ select:required:invalid {
 }*/
 </style>
 
-    <h2>good id listed first {{ headerinfo.ids }}</h2>
+    <h2>-- good id listed first {{ headerinfo.ids }}</h2>
   </td>
 <td style="text-align:right;">
-  <a href="#" onclick='toggleClass("auto")' class="hauto">Toggle autofilled fields</a><br />
-  <!-- <a href="#" onclick='toggleClass("ignore")' class="hignore">Toggle ignorable fields</a><br /> -->
-  <a href="#" onclick='toggleClass("needinput")' class="hneedinput">Toggle fields that need input</a><br />
-  <a href="#" onclick='toggleClass("key")' class="hkey">Toggle fields with key values</a><br />
-  <!-- <a href="#" onclick='toggleClass("same")' class="hauto">Toggle fields  with all the Same values</a><br /> -->
-  <a href="#" onclick='toggleClass("sql")' class="hsql">Toggle SQL fields</a><br />
-  <a href="#" onclick='displayClass("all")'>Show all fields</a>
+  <a href="#" onclick='toggleClass("auto")' class="hauto">-- Toggle autofilled fields</a><br />
+  <!-- <a href="#" onclick='toggleClass("ignore")' class="hignore">--Toggle ignorable fields</a><br /> -->
+  <a href="#" onclick='toggleClass("needinput")' class="hneedinput">-- Toggle fields that need input</a><br />
+  <a href="#" onclick='toggleClass("key")' class="hkey">-- Toggle fields with key values</a><br />
+  <!-- <a href="#" onclick='toggleClass("same")' class="hauto">-- Toggle fields  with all the Same values</a><br /> -->
+  <a href="#" onclick='toggleClass("sql")' class="hsql">-- Toggle SQL fields</a><br />
+  <a href="#" onclick='displayClass("all")'>-- Show all fields</a>
 </td>
 </tr>
 </table>
 
 <form id="f1">  
   <input type="submit" id="submit" value="Check for missing required fields" onclick="checkRequiredFormFields(); return false;">
-  <div class="sql buttondiv" style="width: 600px; border-style: solid; border-radius:10px; padding:5px; background-color:#ffb3ff;">
+  <!-- div class="sql buttondiv" style="width: 600px; border-style: solid; border-radius:10px; padding:5px; background-color:#ffb3ff;">
     <pre class="code">BEGIN TRANSACTION -- rollback if disaster strikes</pre>
-    <button type="button" onclick="copybutton(this)" onmouseout="renamebutton(this)">Copy text</button>
-    </div>
+    <button type="button" onclick="copybutton(this)" onmouseout="renamebutton(this)">-- Copy text</button>
+    </div -->
   {% for row in rows %}
 {% if loop.changed(row.dipid) %}
   <hr style="height:30px; color:red;" />
@@ -219,16 +219,16 @@ select:required:invalid {
           
       </td>
       <td style="text-align:right;">
-        <a href="#{{ row.dipid }}" onclick='toggleClass("{{ row.dipid }}auto")' class="hauto">Toggle {{ row.dipid }} autofilled fields</a><br />
-        <!-- <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}ignore")' class="hignore">Toggle {{ row.dipid }} ignorable fields</a><br /> -->
-        <a href="#{{ row.dipid }}" onclick='toggleClass("{{ row.dipid }}needinput")' class="hneedinput">Toggle {{ row.dipid }} fields that need input</a><br />
-        <a href="#{{ row.dipid }}" onclick='toggleClass("{{ row.dipid }}key")' class="hkey">Toggle {{ row.dipid }} key values</a><br />
-        <!-- <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}same")' class="hauto">Toggle {{ row.dipid }} fields with all the Same values</a><br /> -->
-        <a href="#{{ row.dipid }}" onclick='toggleClass("{{ row.dipid }}sql")' class="hsql">Toggle {{ row.dipid }} SQL fields</a><br />
+        <a href="#{{ row.dipid }}" onclick='toggleClass("{{ row.dipid }}auto")' class="hauto">-- Toggle {{ row.dipid }} autofilled fields</a><br />
+        <!-- <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}ignore")' class="hignore">-- Toggle {{ row.dipid }} ignorable fields</a><br /> -->
+        <a href="#{{ row.dipid }}" onclick='toggleClass("{{ row.dipid }}needinput")' class="hneedinput">-- Toggle {{ row.dipid }} fields that need input</a><br />
+        <a href="#{{ row.dipid }}" onclick='toggleClass("{{ row.dipid }}key")' class="hkey">-- Toggle {{ row.dipid }} key values</a><br />
+        <!-- <a href="#{{ row.table }}" onclick='toggleClass("{{ row.table }}same")' class="hauto">-- Toggle {{ row.dipid }} fields with all the Same values</a><br /> -->
+        <a href="#{{ row.dipid }}" onclick='toggleClass("{{ row.dipid }}sql")' class="hsql">-- Toggle {{ row.dipid }} SQL fields</a><br />
         <a href="#{{ row.dipid }}" onclick='
         displayClass("{{ row.dipid }}auto");
         displayClass("{{ row.dipid }}sql");
-        displayClass("{{ row.dipid }}key")'>Show all {{ row.dipid }} fields</a>
+        displayClass("{{ row.dipid }}key")'>-- Show all {{ row.dipid }} fields</a>
       </td>
     </tr>
   </table>
@@ -237,7 +237,7 @@ select:required:invalid {
   {% if row.options %}
 <div class="{{ row.class }} {{ row.dipid }}{{ row.class }}" style="margin:10px;">
   
-    <label for="{{ row.dipid }}.{{ row.field }}">{{ row.field }} </label>
+    <label for="{{ row.dipid }}.{{ row.field }}">{{row.table}}.{{ row.field }}{% if row.xkeys %} w/ {{ row.xkeys }}{% endif %}</label>
   
     <br />
   <select id="{{ row.dipid }}.{{ row.field }}" size="{{ headerinfo.ids|length +1 }}" required  {{ row.disabled }} onchange="selectFixSQLsets(this)">
@@ -259,10 +259,10 @@ select:required:invalid {
 
 </div>
 {% endfor %}
-<div class="sql buttondiv" style="width: 600px; border-style: solid; border-radius:10px; padding:5px; background-color:#ffb3ff;">
+<!-- div class="sql buttondiv" style="width: 600px; border-style: solid; border-radius:10px; padding:5px; background-color:#ffb3ff;">
   <pre class="code">-- rollback</pre>
-  <button type="button" onclick="copybutton(this)" onmouseout="renamebutton(this)">Copy text</button>
-  </div>
+  <button type="button" onclick="copybutton(this)" onmouseout="renamebutton(this)">-- Copy text</button>
+  </div-->
 
 
 </form>
@@ -282,12 +282,12 @@ function copybutton(buttonid) {
   clp = clp.replace('</span>','');
   clp.replace("<","WHAT");
   navigator.clipboard.writeText(clp);
-  buttonid.innerHTML = "Copied";
+  buttonid.innerHTML = "-- Copied";
   return False;
 }
 
 function renamebutton(buttonid) {
-  buttonid.innerHTML = "Copy again";
+  buttonid.innerHTML = "-- Copy again";
   return False;
 }
 
@@ -298,7 +298,7 @@ for (sqlnum in a) {
   if (a[sqlnum].length == 0) {
     t.innerHTML = "-- nothing to update here ... ";
   } else {
-    t.innerHTML = "update T0 set " + a[sqlnum];
+    t.innerHTML = "-- update T0 set " + a[sqlnum];
   }
 }
 </script>

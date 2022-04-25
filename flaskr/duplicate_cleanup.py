@@ -36,6 +36,7 @@ def index():
     rows.append('Show any human verified but unmatched (called out as dups, but only one ID)')
     rows.append('/showlist Show all dup sets')
     rows.append('/showdupset/<dupset> from showlist pg, pick one dupset, show dups in all applicable tables')
+    rows.append('/resetdupset/<dupset> re-create DupsInProgress on this id')
     rows.append('Process dup set for merges')
     links = ['refreshdups','ShowList']
     return render_template('duplicate_cleanup/index.html', rows=rows, links=links)
@@ -433,8 +434,8 @@ def _allkeyscombosforgooddupset(dupset):
 @login_required
 def showdupset(dupset):
     ans = Dupset(dupset)
-    ans.update_status()
-    ans.update_formdata()
+    # ans.update_status()
+    # ans.update_formdata()
     return render_template('duplicate_cleanup/showdupsetdetail.html',
         rows=ans.formbodyinfo, headerinfo=ans.formheaderinfo, sqlinfo=ans.sqlinfo)
     return render_template('duplicate_cleanup/index.html',
@@ -442,6 +443,19 @@ def showdupset(dupset):
     
     return render_template('duplicate_cleanup/index.html', rows=debugrows)
     # return render_template('duplicate_cleanup/showdupsetdetail.html', rows=[thishtml])
+
+
+@bp.route('/resetdupset/<int:dupset>', methods=('GET', 'POST'))
+@login_required
+def resetdupset(dupset):
+    ans = Dupset(dupset)
+    # ans.update_status()
+    # ans.update_formdata()
+    ans._resetDupsInProgress()
+    return redirect(url_for('.showdupset', dupset=dupset))
+    # return render_template('duplicate_cleanup/showdupsetdetail.html',
+    #     rows=ans.formbodyinfo, headerinfo=ans.formheaderinfo, sqlinfo=ans.sqlinfo)
+
 
 @bp.route('/test')
 @login_required
