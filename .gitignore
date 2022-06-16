@@ -117,5 +117,6 @@ dmypy.json
 secrets.py
 myflaskrsecrets.py
 Attachments/
+SQLActions/
 flaskr/Scripts/flask.exe
 flaskr/Scripts/python.exe
