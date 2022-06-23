@@ -14,6 +14,7 @@ from flaskr.auth import login_required
 # from myflaskrsecrets import dbname ## mcn_connet for us
 from flaskr.models.dupsets import Dupset
 from flaskr.models.dbsetup import Dbsetup
+from flaskr.models.SSNTransposedChecker import SSNTransposedCheck
 
 # jdbname = "TmsEPly"
 # tbldid = '{}..BAY_DupIDs'.format(dbname)
@@ -62,7 +63,7 @@ def index():
     rows.append('/showdupset/<dupset>')
     
     rows.append('/resetdupset/<dupset> reset DupsInProgress on this id')
-    links = ['refreshdups','ShowList','refreshdek']
+    links = ['refreshdups','ShowList','refreshdek','transposedssncheck']
     return render_template('duplicate_cleanup/index.html', rows=rows, links=links)
 
 @bp.route('/refreshdups', methods=('GET', 'POST'))
@@ -76,7 +77,16 @@ def refreshdups():
     else:
         # return redirect(url_for('.index'))
         return render_template('duplicate_cleanup/index.html') # , rows=[msg])
-        
+
+
+
+@bp.route('/transposedssncheck')
+@login_required
+def transposedssncheck():
+    t = SSNTransposedCheck()
+    return render_template('duplicate_cleanup/index.html', 
+            rows=t.results)
+
 @bp.route('/refreshdek', methods=('GET', 'POST'))
 @login_required
 def refreshdek():
@@ -84,6 +94,9 @@ def refreshdek():
     success, msg = t.dbrefreshdek()
     flash (msg)
     if success:
+
+        
+        
         return redirect(url_for('.showlist'))
     else:
         return render_template('duplicate_cleanup/index.html') # , rows=[]])
