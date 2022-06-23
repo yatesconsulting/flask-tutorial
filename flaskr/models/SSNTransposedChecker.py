@@ -1,16 +1,16 @@
 import sys
-import os
-from tabnanny import verbose
-from this import d
-sys.path.insert(0, r'C:/Users/bryany/Desktop/GitHub/flask-tutorial/flaskr') # required for from flaskr.models.... import
+# import os
+# from tabnanny import verbose
+# from this import d
+# sys.path.insert(0, r'C:/Users/bryany/Desktop/GitHub/flask-tutorial/flaskr') # required for from flaskr.models.... import
 sys.path.insert(0, r'C:/Users/bryany/Desktop/GitHub/flask-tutorial') # required for ?import?
 from flaskr import pyodbc_db
-import re
-from os.path import exists as file_exists
-import filedate
-import glob
+# import re
+# from os.path import exists as file_exists
+# import filedate
+# import glob
 from datetime import datetime
-import argparse
+# import argparse
 
 class SSNTransposedCheck():
     '''checks for 2 numbers transposed in SSNs'''
@@ -28,15 +28,6 @@ class SSNTransposedCheck():
             , n.first_name
             , n.birth_name
             , n.preferred_name
-            -- , cast(ssn/100000000 % 10 as int) as d1
-            -- , cast(ssn/10000000 % 10 as int) as d2
-            -- , cast(ssn/1000000 % 10 as int) as d3
-            -- , cast(ssn/100000 % 10 as int) as d4
-            -- , cast(ssn/10000 % 10 as int) as d5
-            -- , cast(ssn/1000 % 10 as int) as d6
-            -- , cast(ssn/100 % 10 as int) as d7
-            -- , cast(ssn/10 % 10 as int) as d8
-            -- , ssn % 10 as d9
             from {self.db}..BIOGRAPH_MASTER B
             join {self.db}..NameMaster N
               on N.id_num = B.id_num
@@ -70,9 +61,11 @@ class SSNTransposedCheck():
                     # print(f"Found a possibility here, {s} and {a}")
                     if int(a) < int(s):
                         v = f"{a}-{s}"
+                    elif int(a) == int(s):
+                        v = ""
                     else:
                         v = f"{s}-{a}"
-                    if v not in ans:
+                    if v and v not in ans:
                         ans.append(v)
         if ans:
             self.results.append("ssn       id_num  last, first   birth_name    preferred_name")
@@ -106,22 +99,18 @@ class SSNTransposedCheck():
 
 if __name__ == '__main__':
 
-    # parser = argparse.ArgumentParser(description='Check SSNs for transposition.')
-    # parser.add_argument('database', metavar='DB', type=str, default="tmseply"
-    #                 help='which database to use, tmseply or tmseprd')
-    # # a = parser.parse_args('--db 1'.split())
-    # print(f"a={parser.DB})
+    db = "" # just put tmseprd in here if you want to default it to live, and run it from VScode
 
-    # # use the passed variable to the program, if available, and a good choice
-    # db = ""
-    # if len(sys.argv)>0 and sys.argv[1].lower() in ['tmseply','tmseprd']:
-    #     db = sys.argv[1]
-    # else:
-    #     db = 'TmsEPly' # not case sensitive
-    # print(f"{datetime.now()} Starting program using {db}, please be patient, it takes a while to query the SQL.")
+    # use the passed variable to the program, if available, and a good choice
+    if sys.argv and len(sys.argv) > 1 and sys.argv[1] and sys.argv[1].lower() in ['tmseply','tmseprd']:
+        db = sys.argv[1]
+    else:
+        db = 'TmsEPly' # not case sensitive
     print(f"started at {datetime.now()}")
-    t = SSNTransposedCheck()
-    print(t.likely)
-    print(f"and the less likely  ones: {t.lesslikely}")
+    t = SSNTransposedCheck(db)
+    print(t.results)
+    print("try2")
+    print(t.results[-1])
+    # print(f"and the less likely  ones: {t.lesslikely}")
     print(f"finished at {datetime.now()}")
 

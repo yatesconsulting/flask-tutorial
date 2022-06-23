@@ -36,7 +36,6 @@ class ExportNewAttachments():
                     if not os.path.exists(fpathfilename):
                         print(f"Creating id:{i[6]}, name: {fpathfilename}")
                         open(fpathfilename, 'wb').write(i[3])
-                        #     # https://stackoverflow.com/questions/4996405/how-do-i-change-the-file-creation-date-of-a-windows-file
                         file_size = os.path.getsize(fpathfilename)
                         if file_size != i[4]:
                             err = f"SIZE DIFFERS File Size is {file_size} bytes, compared to db size of {i[4]} for ATTACHMENT_ID={i[6]}, filename={fpathfilename}\n"
@@ -123,6 +122,7 @@ if __name__ == '__main__':
     
     t = ExportNewAttachments(db)
     print(f"Looking for IDs > {t.donethroughnum} per {t.idnumfile}")
+    # if program is taking forever to run, and returning -100 for the #, check your file paths
     rows = t.getmesomesqlfiles()
     t.turndbrowsintofiles(rows)
     print(f"{datetime.now()} Finished.")
