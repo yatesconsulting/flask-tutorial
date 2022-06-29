@@ -22,56 +22,67 @@ class Dbsetup():
 
     def dbrefreshdups(self):
         '''refresh the dups list from namemaster, return tuple of success bool, and (flash) message'''
-        sql = "delete from {}".format(self.tbldid)
+        sql = "delete from {}".format(self.tbldip)
         r = self.db.execute_i_u_d(sql)
         if 'error' in r and r['error']:
             return(False, "delete failed in dbsetup.py, def dbrefreshdups, sql:\n{}".format(sql))
         else:
-            sql = """
-                insert into {} 
-                (id_num, human_verified, goodid, origtablewithdup, dupset, db)
-                select
-                id_num
-                , 1 as human_verified
-                ,isnull( cast(isnull(stuff(BIRTH_NAME, 1, patindex('%[0-9]%', BIRTH_NAME)-1, ''),stuff(PREFERRED_NAME, 1, patindex('%[0-9]%', PREFERRED_NAME)-1, '')) as int),0)
-                , 'NameMaster' as origtablewithdup
-                , DER2.dupset
-                , '{jdb}'
-                from {jdb}..NameMaster NM 
-                left join 
-                (select ROW_NUMBER() OVER(ORDER BY GoodID ASC) AS dupset,
-                GoodID from (
-                select distinct 
-                isnull(cast(isnull(stuff(BIRTH_NAME, 1, patindex('%[0-9]%', BIRTH_NAME)-1, ''),stuff(PREFERRED_NAME, 1, patindex('%[0-9]%', PREFERRED_NAME)-1, '')) as int),0)
-                as GoodID
-                from {jdb}..NameMaster where BIRTH_NAME like 'dup%' or PREFERRED_NAME like 'dup%' or BIRTH_NAME like 'use%' or PREFERRED_NAME like 'use%') as DER1) as DER2
-                on DER2.goodid = 
-                isnull(  cast(isnull(stuff(BIRTH_NAME, 1, patindex('%[0-9]%', BIRTH_NAME)-1, ''),stuff(PREFERRED_NAME, 1, patindex('%[0-9]%', PREFERRED_NAME)-1, '')) as int),0)
-                where nm.BIRTH_NAME like 'dup%' or PREFERRED_NAME like 'dup%' or nm.BIRTH_NAME like 'use%' or PREFERRED_NAME like 'use%'
-            """.format(self.tbldid, jdb=self.jdbname)
+            
+            sql = f"delete from {self.tblmerges}"
             r = self.db.execute_i_u_d(sql)
             if 'error' in r and r['error']:
-                return(False, "insert failed in dbsetup.py, def dbrefreshdups, sql: {}".format(sql))
+                return(False, "delete failed in dbsetup.py, def dbrefreshdups, sql:\n{}".format(sql))
             else:
-                sql = """SELECT t.name AS procedure_name
-                FROM {} AS t
-                where t.name like 'BAY_sp_dup%'""".format(self.tblsysProcedures)
-                r = self.db.execute_s(sql)
-                if not r:
-                    return (False, "SQL to get list of procedures failed in dbsetup.py, def dbrefreshdups, sql:\n{}".format(sql))
+                sql = "delete from {}".format(self.tbldid)
+                r = self.db.execute_i_u_d(sql)
+                if 'error' in r and r['error']:
+                    return(False, "delete failed in dbsetup.py, def dbrefreshdups, sql:\n{}".format(sql))
                 else:
-                    procedurecount = 0           
-                    for a in r:
-                        proc = a['procedure_name']
-                        procedurecount += 1
-                        # done.append(proc)
-                        sql = "exec {}".format(proc)
-                        r = self.db.execute_i_u_d(sql)
-                        if 'error' in r and r['error']:
-                            return(False, "Procedure failed in dbsetup.py, def dbrefreshdups, sql:\n{}".format(sql))
+                    sql = """
+                        insert into {} 
+                        (id_num, human_verified, goodid, origtablewithdup, dupset, db)
+                        select
+                        id_num
+                        , 1 as human_verified
+                        ,isnull( cast(isnull(stuff(BIRTH_NAME, 1, patindex('%[0-9]%', BIRTH_NAME)-1, ''),stuff(PREFERRED_NAME, 1, patindex('%[0-9]%', PREFERRED_NAME)-1, '')) as int),0)
+                        , 'NameMaster' as origtablewithdup
+                        , DER2.dupset
+                        , '{jdb}'
+                        from {jdb}..NameMaster NM 
+                        left join 
+                        (select ROW_NUMBER() OVER(ORDER BY GoodID ASC) AS dupset,
+                        GoodID from (
+                        select distinct 
+                        isnull(cast(isnull(stuff(BIRTH_NAME, 1, patindex('%[0-9]%', BIRTH_NAME)-1, ''),stuff(PREFERRED_NAME, 1, patindex('%[0-9]%', PREFERRED_NAME)-1, '')) as int),0)
+                        as GoodID
+                        from {jdb}..NameMaster where BIRTH_NAME like 'dup%' or PREFERRED_NAME like 'dup%' or BIRTH_NAME like 'use%' or PREFERRED_NAME like 'use%') as DER1) as DER2
+                        on DER2.goodid = 
+                        isnull(  cast(isnull(stuff(BIRTH_NAME, 1, patindex('%[0-9]%', BIRTH_NAME)-1, ''),stuff(PREFERRED_NAME, 1, patindex('%[0-9]%', PREFERRED_NAME)-1, '')) as int),0)
+                        where nm.BIRTH_NAME like 'dup%' or PREFERRED_NAME like 'dup%' or nm.BIRTH_NAME like 'use%' or PREFERRED_NAME like 'use%'
+                    """.format(self.tbldid, jdb=self.jdbname)
+                    r = self.db.execute_i_u_d(sql)
+                    if 'error' in r and r['error']:
+                        return(False, "insert failed in dbsetup.py, def dbrefreshdups, sql: {}".format(sql))
+                    else:
+                        sql = """SELECT t.name AS procedure_name
+                        FROM {} AS t
+                        where t.name like 'BAY_sp_dup%'""".format(self.tblsysProcedures)
+                        r = self.db.execute_s(sql)
+                        if not r:
+                            return (False, "SQL to get list of procedures failed in dbsetup.py, def dbrefreshdups, sql:\n{}".format(sql))
                         else:
-                            sppart = f" and {procedurecount} stored procedure{'s' if procedurecount != 1 else ''}" if procedurecount else ""
-                            return (True, "dups refreshed from NameMaster{}".format(sppart))
+                            procedurecount = 0           
+                            for a in r:
+                                proc = a['procedure_name']
+                                procedurecount += 1
+                                # done.append(proc)
+                                sql = "exec {}".format(proc)
+                                r = self.db.execute_i_u_d(sql)
+                                if 'error' in r and r['error']:
+                                    return(False, "Procedure failed in dbsetup.py, def dbrefreshdups, sql:\n{}".format(sql))
+                                else:
+                                    sppart = f" and {procedurecount} stored procedure{'s' if procedurecount != 1 else ''}" if procedurecount else ""
+                                    return (True, "dips, and merges cleared and dups refreshed from NameMaster{}".format(sppart))
 
     def dbrefreshdek(self):
         '''refresh the dups extra keys table and return tuple of success bool, and (flash) message'''
@@ -82,9 +93,10 @@ class Dbsetup():
         insert into {tbl}
         (tablename,xkeys,tablekeyname,mykeyname,tableuniqkey)
         values 
-        ('ORG_TRACKING','ORG_ID_NUM, SEQ_NUM','ID_NUM','id_num','APPID') -- UI,ORG_TRACKING , SEQ_NUM
-        -- org dups someday??? ,('ORG_TRACKING',NULL,'ORG_ID_NUM','id_num','APPID') -- UI,ORG_TRACKING , SEQ_NUM
+        ('ORG_TRACKING',NULL,'ID_NUM','id_num','APPID') -- UI,ORG_TRACKING , SEQ_NUM
+        -- changed 6/27/22 since it's now an update ('ORG_TRACKING','ORG_ID_NUM, SEQ_NUM','ID_NUM','id_num','APPID') -- UI,ORG_TRACKING , SEQ_NUM
         ,('AD_ORG_TRACKING','ORG_ID__AD','ID_NUM','id_num','APPID') -- from UniqueIndexes,AD_ORG_TRACKING, was SEQ_NUM
+        -- org dups someday??? ,('ORG_TRACKING',NULL,'ORG_ID_NUM','id_num','APPID') -- UI,ORG_TRACKING , SEQ_NUM
         -- org dups someday??? ,('AD_ORG_TRACKING',NULL,'ORG_ID__AD','id_num','APPID') -- MAYBE, as id_num of orgs, not person TODO check this
         ,('ADVISING_HISTORY','SEQ_NUM','ID_NUM','id_num','APPID') -- ADVISING_HISTORY -- removed advisorid for better(?) shuffling
         ,('ADV_MASTER',NULL,'ID_NUM','id_num','APPID') -- changed per UI,ADV_MASTER
@@ -284,21 +296,19 @@ class Dbsetup():
         --, 'DEGREE_HISTORY' -- DEGREE_HISTORY -> GRADUATION_STAGE in a way that makes this need to be deleted
         , 'RACE_REPORT_DTL', 'COURSE_AUTHORIZATION'
         --, 'REQUIREMENTS'  -- I cannot decide on this one
-        , 'TEST_SCORES'
-        , 'STUD_ADV_ALTER', 'ADVISING_HISTORY', 'ATTRIBUTE_TRANS', 'ADVISOR_STUD_TABLE',
-         'TEST_SCORES_DETAIL'
+        , 'STUD_ADV_ALTER', 'ADVISING_HISTORY', 'ATTRIBUTE_TRANS', 'ADVISOR_STUD_TABLE'
+        , 'TEST_SCORES', 'TEST_SCORES_DETAIL' -- maybe not, looking at 4366423 ???
         , 'TRANSCRIPT_REQUEST', 'FEES', 'STUDENT_PROGRESS', 'RELATION_TABLE', 'ETHNIC_REPORT_DTL'
-
-        )    
+        )
 
         update {tbl}
         set defaultaction = 'update' -- many of the histories can probably go here
         where tablename in (
-            'ETHNIC_RACE_REPORT'
+            'ORG_TRACKING' -- failing in shuffle sometimes, maybe the enddate needs tweaking
+            ,'ETHNIC_RACE_REPORT'
             ,'NAME_HISTORY' -- definately correct
             ,'Archive_ADDRESS_HISTORY'
             ,'HOLD_TRAN' -- pretty sure, except the DUP hold TODO
-            ,'ORG_TRACKING' -- failing in shuffle sometimes, maybe the enddate needs tweaking
             ,'FERPA_PERMISSION' -- works on PARENT_ID_NUM, hopefully ID_NUM also
             -- ,'EMPL_MAST' -- nope
         )    
@@ -309,12 +319,7 @@ class Dbsetup():
         'J1FormattedNames'
         ,'STUDENT_CRS_HIST','STUDENT_CRS_HIST_PFLAG_HIST'
         ,'DEGREE_HISTORY' -- DEGREE_HISTORY -> GRADUATION_STAGE in a way that makes this need to be deleted
-        )
-
-        update {tbl}
-        set defaultaction = 'delete'
-        where tablename in (
-        'AlternateNameMasterNames'
+        ,'AlternateNameMasterNames'
         ,'AlternateContactMethod'
         )
 
@@ -367,7 +372,7 @@ if __name__ == '__main__':
             success, msg, r = t.dbshowlist()
             if success:
                 print ("q3 worked with msg {}".format(msg))
-                print("both refreshes worked, {} dupsets, and here's your top {}:".format(len(r), topnum))
+                print("all refreshes worked, {} dupsets, and here's your top {}:".format(len(r), topnum))
                 for rr in range(topnum):
                     print("row {}:{}".format(rr+1, r[rr]))
             else:
@@ -376,5 +381,3 @@ if __name__ == '__main__':
             print("fail: {}".format(msg))
     else:
         print("fail: {}".format(msg))
-    
-

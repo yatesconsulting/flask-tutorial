@@ -1,7 +1,7 @@
 USE [MCN_Connect]
 GO
 
-/****** Object:  StoredProcedure [dbo].[BAY_sp_dupBIOGRAPH_MASTER_TmsEPly]    Script Date: 6/22/2022 8:38:58 PM ******/
+/****** Object:  StoredProcedure [dbo].[BAY_sp_dupBIOGRAPH_MASTER_TmsEPly]    Script Date: 6/27/2022 12:24:08 AM ******/
 SET ANSI_NULLS ON
 GO
 
@@ -14,7 +14,7 @@ GO
 -- Create date: 10/10/2021
 -- Description:	SSN dups identified and inserted into DupIDs table
 -- =============================================
-CREATE PROCEDURE [dbo].[BAY_sp_dupBIOGRAPH_MASTER_TmsEPly]
+Create PROCEDURE [dbo].[BAY_sp_dupBIOGRAPH_MASTER_TmsEPly]
 AS
 BEGIN
 	-- SET NOCOUNT ON added to prevent extra result sets from
@@ -42,8 +42,13 @@ WHILE @@FETCH_STATUS = 0
 BEGIN  
   insert into MCN_Connect..BAY_DupIDs 
     (id_num, human_verified, origtablewithdup ,dupset, db)
-  select id_num, 0, 'BIOGRAPH_MASTER', @dupset, 'TmsEPly' 
-  from TmsEPly..BIOGRAPH_MASTER where ssn = @ssn
+  select B.id_num, 0, 'BIOGRAPH_MASTER', @dupset, 'TmsEPly' 
+  from TmsEPly..BIOGRAPH_MASTER B
+  left join MCN_Connect..BAY_DupIDs D
+    on B.id_num in (D.id_num, D.goodid)
+  where B.ssn = @ssn
+    and D.id_num is null -- skip those that are already identified
+
   set @dupset = @dupset + 1
   FETCH NEXT FROM db_cursor INTO @ssn 
 END 
@@ -52,5 +57,3 @@ DEALLOCATE db_cursor
 
 END
 GO
-
-

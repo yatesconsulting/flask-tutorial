@@ -94,9 +94,6 @@ def refreshdek():
     success, msg = t.dbrefreshdek()
     flash (msg)
     if success:
-
-        
-        
         return redirect(url_for('.showlist'))
     else:
         return render_template('duplicate_cleanup/index.html') # , rows=[]])
@@ -148,4 +145,4 @@ def resetdupset(dupset):
     #     rows=ans.formbodyinfo, headerinfo=ans.formheaderinfo, sqlinfo=ans.sqlinfo)
 
 if __name__ == '__main__':
-    print("hi, don't run this file, use the models instead")
+    print("Hi, don't run this file, use the models instead.")

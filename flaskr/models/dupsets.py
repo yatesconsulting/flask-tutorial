@@ -9,7 +9,7 @@ from datetime import datetime
 sys.path.insert(0, r'C:/Users/bryany/Desktop/GitHub/flask-tutorial/flaskr') # required for from flaskr.models.... import
 sys.path.insert(0, r'C:/Users/bryany/Desktop/GitHub/flask-tutorial') # required for ?import?
 from flaskr import pyodbc_db
-from myflaskrsecrets import dbname, jdbname, tbldid, tbldip, tblxkeys, tblmerges, tblPKConstraints, tblnamemaster
+from myflaskrsecrets import dbname, jdbname, tbldid, tbldip, tblxkeys, tblmerges, tblnamemaster
 
 class Dupset():
     def __init__(self, dupset, requestform):
@@ -21,14 +21,12 @@ class Dupset():
         self.tbldip = tbldip
         self.tblxkeys = tblxkeys
         self.tblmerges = tblmerges
-        self.tblPKConstraints = tblPKConstraints
         self.tblNameMaster = tblnamemaster
         self.requestform = {}
         self.savemergeinfo = {}
         self.ids = {}
         self.goodid = 0
         self.goodappid = 0
-        # self.goodgoid = 0
         self.formheaderinfo = {}
         self.formbodyinfo = []
         self.sqlinfo = {}
@@ -55,7 +53,6 @@ class Dupset():
                 if dupids[i]['id_num'] == dupids[i]['goodid']:
                     self.goodid = dupids[i]['goodid']
                     self.goodappid = dupids[i]['appid']
-                    # self.goodgoid = dupids[0]['goid'] # etc
             # sort the ids to put goodid first, then the others in sorted order, for repeatability later
             temp = []
             temp = sorted([l['id_num'] for l in dupids]) # 'id_num' req'd here
@@ -67,11 +64,6 @@ class Dupset():
             temp.remove(self.goodappid)
             temp.insert(0, self.goodappid)
             self.ids['appid'] = temp
-            # temp = []
-            # temp = sorted([l['goid'] for l in dupids])
-            # temp.remove(self.goodgoid)
-            # temp.insert(0, self.goodgoid)
-            # self.ids['goid'] = temp
 
             # self.update_formdata_and_status() # don't always need this, so don't always do it
 
@@ -457,34 +449,33 @@ class Dupset():
                 p2just0and1s = False
         return p1, p2, p2just0and1s
 
-    def _actionplan(self, cnt, t):
-        ''' if tdef, table default, is not specified, categories of cnt and what to do with them:
-        0,1...	 BCD
-        1...,0	-
-        1,[01],[01]... ABCD (no 2's, at least one 1 )
-        1,2...   BCD (maybe a, but too much work for nada)
-        2,1...	 BCD
+    # def _actionplan(self, cnt, t):
+    #     ''' if tdef, table default, is not specified, categories of cnt and what to do with them:
+    #     0,1...	 BCD
+    #     1...,0	-
+    #     1,[01],[01]... ABCD (no 2's, at least one 1 )
+    #     1,2...   BCD (maybe a, but too much work for nada)
+    #     2,1...	 BCD
         
-        A = show boxes and update T0
-        B = update all bad id records with good id
-        C = insert bad record(s) into new ones with good id
-        D = delete all bad ID records
-        '''
-        if self.debug > 3: print(f"def _actionplan cnt={cnt}, t={t}")
-        p1,p2,p2just0and1s = self._cntparts(cnt)
-        if p1 == 0 and p2 >= 1:
-            return "BCD"
-        elif p1 >= 1 and p2 == 0:
-            return ""
-        elif p1 == 1 and p2 >= 1 and p2just0and1s:
-            return "ABCD"
-        elif p1 == 1 and p2 >= 2:
-            return "BCD"
-        elif p1 >= 2 and p2 >= 1:
-            return "BCD"
-        else:
-            return "" # in off chance of 0,0 or whatever
-
+    #     A = show boxes and update T0
+    #     B = update all bad id records with good id
+    #     C = insert bad record(s) into new ones with good id
+    #     D = delete all bad ID records
+    #     '''
+    #     if self.debug > 3: print(f"def _actionplan cnt={cnt}, t={t}")
+    #     p1,p2,p2just0and1s = self._cntparts(cnt)
+    #     if p1 == 0 and p2 >= 1:
+    #         return "BCD"
+    #     elif p1 >= 1 and p2 == 0:
+    #         return ""
+    #     elif p1 == 1 and p2 >= 1 and p2just0and1s:
+    #         return "ABCD"
+    #     elif p1 == 1 and p2 >= 2:
+    #         return "BCD"
+    #     elif p1 >= 2 and p2 >= 1:
+    #         return "BCD"
+    #     else:
+    #         return "" # in off chance of 0,0 or whatever
             
     def _catagorizecnt(self, cnt):
         ''' categories of cnt and what to do with them:
@@ -1001,7 +992,8 @@ from {}..{} where {} in ({}) {}""".format(table,
         INFO = "select * from {}..{} where {} in ({}) {}".format(self.jdbname,tablename, tkey, ids, axkeys)
         if category == 'delete':
             # self.formbodyinfo.append("-- catDELETE {}".format(t))
-            ttt = {'try':'D,CD', 'D':D, 'C':C, 'dipid':dipid, 'tablename':tablename, 'axkeys':axkeys, 'info':INFO }
+            # ttt = {'try':'D,CD', 'D':D, 'C':C, 'dipid':dipid, 'tablename':tablename, 'axkeys':axkeys, 'info':INFO }
+            ttt = {'try':'D', 'D':D, 'dipid':dipid, 'tablename':tablename, 'axkeys':axkeys, 'info':INFO }
             # print("DELETE found on {}, appending {}".format(tablename, ttt))
             self.finalsql.append(ttt)
 
@@ -1277,7 +1269,6 @@ from {}..{} where {} in ({}) {}""".format(table,
                         # self.formbodyinfo.append("---- not self.finalsql and not triedresettingdatabaserecently (reset and triedresettingdatabaserecently = True)")
                         givingupcompletelyoralldone = True
 
-
                     elif not keylistchanges and not triedresettingdatabaserecently:
                         # no sql succeeded through an entire pass, but havn't tried resetting the database
                         # self.formbodyinfo.append("---- not keylistchanges and not triedresettingdatabaserecently (reset and triedresettingdatabaserecently = True)")
@@ -1303,13 +1294,14 @@ from {}..{} where {} in ({}) {}""".format(table,
                 triedresettingdatabaserecently = True
                 self.formbodyinfo.append("---- resetting database to check again")
 
+        # WHY is this needed? get a long list of dups if not, sometimes, but WHY? shuffles?
         tableprobs =set([a['tablename'] for a in self.finalsql])
-        used = set()
-        u = [x for x in self.finalsql if x not in used and (used.add(x) or True)]
+        u = list({v['tablename']:v for v in self.finalsql}.values())
+
         self.formbodyinfo.append(f"""-- Done processing, 
             -- timeslooped: {timeslooped}
             -- remaining len(finalsql): {len(self.finalsql)} 
-            -- tables with probs: {tableprobs}, finalsql: {u}""")
+            -- tables with probs: {tableprobs}, finalsql: {u}""") # self.finalsql vs u
         self._appendformbodyinfointofile()
 
 
@@ -1349,24 +1341,17 @@ if __name__ == '__main__':
     # }
     # fd = {'295200.UDEF_5A_2':'Other','295200.UDEF_5A_2.custom':'6A#@%'}
     # for a in range(2,27):
-    a = 9
+    a = 5
     print(f"Trying {a} at {datetime.now()}")
     sumpin = Dupset(a, fd)
     print(f"goodid {sumpin.goodid}")
-    # print("ok1")
     # sumpin._resetDupsInProgress(savemerge=True)
     sumpin._resetDupsInProgress() # erases category=merge sql and dip
     sumpin.update_formdata_and_status()
     sumpin._automerge()
     sumpin.update_formdata_and_status()
-    # print("ok3")
     print(sumpin.status)
     if sumpin.status == "magictime":
         sumpin.attempttheupdate()
         print(sumpin.formbodyinfo) # [-1])
         # print(sumpin.formheaderinfo)
-    # print("ok4")
-    # # print(f"HEAD: {sumpin.formheaderinfo}")
-    # print(f"FBI: {sumpin.formbodyinfo}")
-
-# from flaskr.models.dbsetup import Dbsetup

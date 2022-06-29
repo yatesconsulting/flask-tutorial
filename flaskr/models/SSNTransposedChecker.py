@@ -1,16 +1,8 @@
 import sys
-# import os
-# from tabnanny import verbose
-# from this import d
 # sys.path.insert(0, r'C:/Users/bryany/Desktop/GitHub/flask-tutorial/flaskr') # required for from flaskr.models.... import
 sys.path.insert(0, r'C:/Users/bryany/Desktop/GitHub/flask-tutorial') # required for ?import?
 from flaskr import pyodbc_db
-# import re
-# from os.path import exists as file_exists
-# import filedate
-# import glob
 from datetime import datetime
-# import argparse
 
 class SSNTransposedCheck():
     '''checks for 2 numbers transposed in SSNs'''
@@ -108,9 +100,8 @@ if __name__ == '__main__':
         db = 'TmsEPly' # not case sensitive
     print(f"started at {datetime.now()}")
     t = SSNTransposedCheck(db)
-    print(t.results)
-    print("try2")
-    print(t.results[-1])
-    # print(f"and the less likely  ones: {t.lesslikely}")
+    print(f"{len(t.results)-2} results found")
+    if len(t.results) > 1:
+        print(f"a possible match {t.results[1]}")
     print(f"finished at {datetime.now()}")
 
