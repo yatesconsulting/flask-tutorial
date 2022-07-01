@@ -78,9 +78,11 @@ class SSNTransposedCheck():
                     # print(tl)
                     self.results.append(llin)
                     self.results.append(rlin)
+                    self.results.append(".")
                 else:
                     lesslikely.append(llin)
                     lesslikely.append(rlin)
+                    lesslikely.append(".")
 
             if lesslikely:
                 # print("These are a bit less likely:")

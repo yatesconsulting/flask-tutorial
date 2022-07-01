@@ -1,0 +1,1246 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h2><a href="{{ url_for('.index') }}">{% block title %}Duplicate Cleanup{% endblock %}</a></h2>
+{% endblock %}
+
+{% block content %}
+
+<style>
+<!--
+ /* Font Definitions */
+ @font-face
+	{font-family:"Cambria Math";
+	panose-1:2 4 5 3 5 4 6 3 2 4;
+	mso-font-charset:0;
+	mso-generic-font-family:roman;
+	mso-font-pitch:variable;
+	mso-font-signature:3 0 0 0 1 0;}
+@font-face
+	{font-family:Calibri;
+	panose-1:2 15 5 2 2 2 4 3 2 4;
+	mso-font-charset:0;
+	mso-generic-font-family:swiss;
+	mso-font-pitch:variable;
+	mso-font-signature:-469750017 -1073732485 9 0 511 0;}
+@font-face
+	{font-family:"Calibri Light";
+	panose-1:2 15 3 2 2 2 4 3 2 4;
+	mso-font-charset:0;
+	mso-generic-font-family:swiss;
+	mso-font-pitch:variable;
+	mso-font-signature:-469750017 -1073732485 9 0 511 0;}
+ /* Style Definitions */
+ p.MsoNormalz, li.MsoNormalz, div.MsoNormalz
+	{mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-parent:"";
+	margin-top:0in;
+	margin-right:0in;
+	margin-bottom:8.0pt;
+	margin-left:0in;
+	line-height:107%;
+	mso-pagination:widow-orphan;
+	font-size:11.0pt;
+	font-family:"Calibri",sans-serif;
+	mso-ascii-font-family:Calibri;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:Calibri;
+	mso-fareast-theme-font:minor-latin;
+	mso-hansi-font-family:Calibri;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:minor-bidi;}
+h1z
+	{mso-style-priority:9;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-link:"Heading 1 Char";
+	mso-style-next:Normal;
+	margin-top:12.0pt;
+	margin-right:0in;
+	margin-bottom:0in;
+	margin-left:0in;
+	line-height:107%;
+	mso-pagination:widow-orphan lines-together;
+	page-break-after:avoid;
+	mso-outline-level:1;
+	font-size:16.0pt;
+	font-family:"Calibri Light",sans-serif;
+	mso-ascii-font-family:"Calibri Light";
+	mso-ascii-theme-font:major-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:"Calibri Light";
+	mso-hansi-theme-font:major-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#2F5496;
+	mso-themecolor:accent1;
+	mso-themeshade:191;
+	mso-font-kerning:0pt;
+	font-weight:normal;}
+h2z
+	{mso-style-priority:9;
+	mso-style-qformat:yes;
+	mso-style-link:"Heading 2 Char";
+	mso-style-next:Normal;
+	margin-top:2.0pt;
+	margin-right:0in;
+	margin-bottom:0in;
+	margin-left:0in;
+	line-height:107%;
+	mso-pagination:widow-orphan lines-together;
+	page-break-after:avoid;
+	mso-outline-level:2;
+	font-size:13.0pt;
+	font-family:"Calibri Light",sans-serif;
+	mso-ascii-font-family:"Calibri Light";
+	mso-ascii-theme-font:major-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:"Calibri Light";
+	mso-hansi-theme-font:major-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#2F5496;
+	mso-themecolor:accent1;
+	mso-themeshade:191;
+	font-weight:normal;}
+p.MsoToc1, li.MsoToc1, div.MsoToc1
+	{mso-style-update:auto;
+	mso-style-priority:39;
+	mso-style-next:Normal;
+	margin-top:0in;
+	margin-right:0in;
+	margin-bottom:5.0pt;
+	margin-left:0in;
+	line-height:107%;
+	mso-pagination:widow-orphan;
+	font-size:11.0pt;
+	font-family:"Calibri",sans-serif;
+	mso-ascii-font-family:Calibri;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:Calibri;
+	mso-fareast-theme-font:minor-latin;
+	mso-hansi-font-family:Calibri;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:minor-bidi;}
+p.MsoToc2, li.MsoToc2, div.MsoToc2
+	{mso-style-update:auto;
+	mso-style-priority:39;
+	mso-style-next:Normal;
+	margin-top:0in;
+	margin-right:0in;
+	margin-bottom:5.0pt;
+	margin-left:11.0pt;
+	line-height:107%;
+	mso-pagination:widow-orphan;
+	font-size:11.0pt;
+	font-family:"Calibri",sans-serif;
+	mso-ascii-font-family:Calibri;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:Calibri;
+	mso-fareast-theme-font:minor-latin;
+	mso-hansi-font-family:Calibri;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:minor-bidi;}
+p.MsoToc3, li.MsoToc3, div.MsoToc3
+	{mso-style-update:auto;
+	mso-style-priority:39;
+	mso-style-next:Normal;
+	margin-top:0in;
+	margin-right:0in;
+	margin-bottom:5.0pt;
+	margin-left:22.0pt;
+	line-height:107%;
+	mso-pagination:widow-orphan;
+	font-size:11.0pt;
+	font-family:"Calibri",sans-serif;
+	mso-ascii-font-family:Calibri;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:minor-fareast;
+	mso-hansi-font-family:Calibri;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";}
+p.MsoTitle, li.MsoTitle, div.MsoTitle
+	{mso-style-priority:10;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-link:"Title Char";
+	mso-style-next:Normal;
+	margin:0in;
+	mso-add-space:auto;
+	mso-pagination:widow-orphan;
+	font-size:28.0pt;
+	font-family:"Calibri Light",sans-serif;
+	mso-ascii-font-family:"Calibri Light";
+	mso-ascii-theme-font:major-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:"Calibri Light";
+	mso-hansi-theme-font:major-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	letter-spacing:-.5pt;
+	mso-font-kerning:14.0pt;}
+p.MsoTitleCxSpFirst, li.MsoTitleCxSpFirst, div.MsoTitleCxSpFirst
+	{mso-style-priority:10;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-link:"Title Char";
+	mso-style-next:Normal;
+	mso-style-type:export-only;
+	margin:0in;
+	mso-add-space:auto;
+	mso-pagination:widow-orphan;
+	font-size:28.0pt;
+	font-family:"Calibri Light",sans-serif;
+	mso-ascii-font-family:"Calibri Light";
+	mso-ascii-theme-font:major-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:"Calibri Light";
+	mso-hansi-theme-font:major-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	letter-spacing:-.5pt;
+	mso-font-kerning:14.0pt;}
+p.MsoTitleCxSpMiddle, li.MsoTitleCxSpMiddle, div.MsoTitleCxSpMiddle
+	{mso-style-priority:10;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-link:"Title Char";
+	mso-style-next:Normal;
+	mso-style-type:export-only;
+	margin:0in;
+	mso-add-space:auto;
+	mso-pagination:widow-orphan;
+	font-size:28.0pt;
+	font-family:"Calibri Light",sans-serif;
+	mso-ascii-font-family:"Calibri Light";
+	mso-ascii-theme-font:major-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:"Calibri Light";
+	mso-hansi-theme-font:major-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	letter-spacing:-.5pt;
+	mso-font-kerning:14.0pt;}
+p.MsoTitleCxSpLast, li.MsoTitleCxSpLast, div.MsoTitleCxSpLast
+	{mso-style-priority:10;
+	mso-style-unhide:no;
+	mso-style-qformat:yes;
+	mso-style-link:"Title Char";
+	mso-style-next:Normal;
+	mso-style-type:export-only;
+	margin:0in;
+	mso-add-space:auto;
+	mso-pagination:widow-orphan;
+	font-size:28.0pt;
+	font-family:"Calibri Light",sans-serif;
+	mso-ascii-font-family:"Calibri Light";
+	mso-ascii-theme-font:major-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:"Calibri Light";
+	mso-hansi-theme-font:major-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	letter-spacing:-.5pt;
+	mso-font-kerning:14.0pt;}
+a:link, span.MsoHyperlink
+	{mso-style-priority:99;
+	color:#0563C1;
+	mso-themecolor:hyperlink;
+	text-decoration:underline;
+	text-underline:single;}
+a:visited, span.MsoHyperlinkFollowed
+	{mso-style-noshow:yes;
+	mso-style-priority:99;
+	color:#954F72;
+	mso-themecolor:followedhyperlink;
+	text-decoration:underline;
+	text-underline:single;}
+p.MsoTocHeading, li.MsoTocHeading, div.MsoTocHeading
+	{mso-style-priority:39;
+	mso-style-qformat:yes;
+	mso-style-parent:"Heading 1";
+	mso-style-next:Normal;
+	margin-top:12.0pt;
+	margin-right:0in;
+	margin-bottom:0in;
+	margin-left:0in;
+	line-height:107%;
+	mso-pagination:widow-orphan lines-together;
+	page-break-after:avoid;
+	font-size:16.0pt;
+	font-family:"Calibri Light",sans-serif;
+	mso-ascii-font-family:"Calibri Light";
+	mso-ascii-theme-font:major-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:"Calibri Light";
+	mso-hansi-theme-font:major-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#2F5496;
+	mso-themecolor:accent1;
+	mso-themeshade:191;}
+span.TitleChar
+	{mso-style-name:"Title Char";
+	mso-style-priority:10;
+	mso-style-unhide:no;
+	mso-style-locked:yes;
+	mso-style-link:Title;
+	mso-ansi-font-size:28.0pt;
+	mso-bidi-font-size:28.0pt;
+	font-family:"Calibri Light",sans-serif;
+	mso-ascii-font-family:"Calibri Light";
+	mso-ascii-theme-font:major-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:"Calibri Light";
+	mso-hansi-theme-font:major-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	letter-spacing:-.5pt;
+	mso-font-kerning:14.0pt;}
+span.Heading2Char
+	{mso-style-name:"Heading 2 Char";
+	mso-style-priority:9;
+	mso-style-unhide:no;
+	mso-style-locked:yes;
+	mso-style-link:"Heading 2";
+	mso-ansi-font-size:13.0pt;
+	mso-bidi-font-size:13.0pt;
+	font-family:"Calibri Light",sans-serif;
+	mso-ascii-font-family:"Calibri Light";
+	mso-ascii-theme-font:major-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:"Calibri Light";
+	mso-hansi-theme-font:major-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#2F5496;
+	mso-themecolor:accent1;
+	mso-themeshade:191;}
+span.Heading1Char
+	{mso-style-name:"Heading 1 Char";
+	mso-style-priority:9;
+	mso-style-unhide:no;
+	mso-style-locked:yes;
+	mso-style-link:"Heading 1";
+	mso-ansi-font-size:16.0pt;
+	mso-bidi-font-size:16.0pt;
+	font-family:"Calibri Light",sans-serif;
+	mso-ascii-font-family:"Calibri Light";
+	mso-ascii-theme-font:major-latin;
+	mso-fareast-font-family:"Times New Roman";
+	mso-fareast-theme-font:major-fareast;
+	mso-hansi-font-family:"Calibri Light";
+	mso-hansi-theme-font:major-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:major-bidi;
+	color:#2F5496;
+	mso-themecolor:accent1;
+	mso-themeshade:191;}
+span.SpellE
+	{mso-style-name:"";
+	mso-spl-e:yes;}
+span.GramE
+	{mso-style-name:"";
+	mso-gram-e:yes;}
+.MsoChpDefault
+	{mso-style-type:export-only;
+	mso-default-props:yes;
+	font-family:"Calibri",sans-serif;
+	mso-ascii-font-family:Calibri;
+	mso-ascii-theme-font:minor-latin;
+	mso-fareast-font-family:Calibri;
+	mso-fareast-theme-font:minor-latin;
+	mso-hansi-font-family:Calibri;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:minor-bidi;}
+.MsoPapDefault
+	{mso-style-type:export-only;
+	margin-bottom:8.0pt;
+	line-height:107%;}
+@page WordSection1
+	{size:8.5in 11.0in;
+	margin:.5in .5in .5in .5in;
+	mso-header-margin:.5in;
+	mso-footer-margin:.5in;
+	mso-paper-source:0;}
+div.WordSection1
+	{page:WordSection1;}
+-->
+</style>
+<!--[if gte mso 10]>
+<style>
+ /* Style Definitions */
+ table.MsoNormalTable
+	{mso-style-name:"Table Normal";
+	mso-tstyle-rowband-size:0;
+	mso-tstyle-colband-size:0;
+	mso-style-noshow:yes;
+	mso-style-priority:99;
+	mso-style-parent:"";
+	mso-padding-alt:0in 5.4pt 0in 5.4pt;
+	mso-para-margin-top:0in;
+	mso-para-margin-right:0in;
+	mso-para-margin-bottom:8.0pt;
+	mso-para-margin-left:0in;
+	line-height:107%;
+	mso-pagination:widow-orphan;
+	font-size:11.0pt;
+	font-family:"Calibri",sans-serif;
+	mso-ascii-font-family:Calibri;
+	mso-ascii-theme-font:minor-latin;
+	mso-hansi-font-family:Calibri;
+	mso-hansi-theme-font:minor-latin;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-theme-font:minor-bidi;}
+</style>
+<![endif]--><!--[if gte mso 9]><xml>
+ <o:shapedefaults v:ext="edit" spidmax="1026"/>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <o:shapelayout v:ext="edit">
+  <o:idmap v:ext="edit" data="1"/>
+ </o:shapelayout></xml><![endif]-->
+</head>
+
+<!-- body lang=EN-US link="#0563C1" vlink="#954F72" style='tab-interval:.5in;
+word-wrap:break-word' -->
+
+<div class=WordSection1><w:Sdt SdtDocPart="t" DocPartType="Table of Contents"
+ DocPartUnique="t" ID="-961263033">
+ <h1>Duplicate Cleanup Process steps</h1>
+ <p class=MsoToc2 style='tab-stops:right dotted 539.5pt'><!--[if supportFields]><span
+ style='mso-element:field-begin'></span><span
+ style='mso-spacerun:yes'> </span>TOC \o &quot;1-3&quot; \h \z \u <span
+ style='mso-element:field-separator'></span><![endif]--><a href="#_Toc107267628"><span
+ style='mso-no-proof:yes'>General use of website</span><span style='color:windowtext;
+ display:none;mso-hide:screen;mso-no-proof:yes;text-decoration:none;text-underline:
+ none'><span style='mso-tab-count:1 dotted'>. </span></span><!--[if supportFields]><span
+ style='color:windowtext;display:none;mso-hide:screen;mso-no-proof:yes;
+ text-decoration:none;text-underline:none'><span style='mso-element:field-begin'></span>
+ PAGEREF _Toc107267628 \h <span style='mso-element:field-separator'></span></span><![endif]--><span
+ style='color:windowtext;display:none;mso-hide:screen;mso-no-proof:yes;
+ text-decoration:none;text-underline:none'>1<!--[if gte mso 9]><xml>
+  <w:data>08D0C9EA79F9BACE118C8200AA004BA90B02000000080000000E0000005F0054006F0063003100300037003200360037003600320038000000</w:data>
+ </xml><![endif]--></span><!--[if supportFields]><span style='color:windowtext;
+ display:none;mso-hide:screen;mso-no-proof:yes;text-decoration:none;text-underline:
+ none'><span style='mso-element:field-end'></span></span><![endif]--></a><span
+ style='mso-fareast-font-family:"Times New Roman";mso-fareast-theme-font:minor-fareast;
+ mso-no-proof:yes'><o:p></o:p></span></p>
+ <p class=MsoToc2 style='tab-stops:right dotted 539.5pt'><a
+ href="#_Toc107267629"><span style='mso-no-proof:yes'>Identify Dups</span><span
+ style='color:windowtext;display:none;mso-hide:screen;mso-no-proof:yes;
+ text-decoration:none;text-underline:none'><span style='mso-tab-count:1 dotted'>. </span></span><!--[if supportFields]><span
+ style='color:windowtext;display:none;mso-hide:screen;mso-no-proof:yes;
+ text-decoration:none;text-underline:none'><span style='mso-element:field-begin'></span>
+ PAGEREF _Toc107267629 \h <span style='mso-element:field-separator'></span></span><![endif]--><span
+ style='color:windowtext;display:none;mso-hide:screen;mso-no-proof:yes;
+ text-decoration:none;text-underline:none'>1<!--[if gte mso 9]><xml>
+  <w:data>08D0C9EA79F9BACE118C8200AA004BA90B02000000080000000E0000005F0054006F0063003100300037003200360037003600320039000000</w:data>
+ </xml><![endif]--></span><!--[if supportFields]><span style='color:windowtext;
+ display:none;mso-hide:screen;mso-no-proof:yes;text-decoration:none;text-underline:
+ none'><span style='mso-element:field-end'></span></span><![endif]--></a><span
+ style='mso-fareast-font-family:"Times New Roman";mso-fareast-theme-font:minor-fareast;
+ mso-no-proof:yes'><o:p></o:p></span></p>
+ <p class=MsoToc2 style='tab-stops:right dotted 539.5pt'><a
+ href="#_Toc107267630"><span style='mso-no-proof:yes'>Define all tables to look
+ for dups in</span><span style='color:windowtext;display:none;mso-hide:screen;
+ mso-no-proof:yes;text-decoration:none;text-underline:none'><span
+ style='mso-tab-count:1 dotted'>. </span></span><!--[if supportFields]><span
+ style='color:windowtext;display:none;mso-hide:screen;mso-no-proof:yes;
+ text-decoration:none;text-underline:none'><span style='mso-element:field-begin'></span>
+ PAGEREF _Toc107267630 \h <span style='mso-element:field-separator'></span></span><![endif]--><span
+ style='color:windowtext;display:none;mso-hide:screen;mso-no-proof:yes;
+ text-decoration:none;text-underline:none'>2<!--[if gte mso 9]><xml>
+  <w:data>08D0C9EA79F9BACE118C8200AA004BA90B02000000080000000E0000005F0054006F0063003100300037003200360037003600330030000000</w:data>
+ </xml><![endif]--></span><!--[if supportFields]><span style='color:windowtext;
+ display:none;mso-hide:screen;mso-no-proof:yes;text-decoration:none;text-underline:
+ none'><span style='mso-element:field-end'></span></span><![endif]--></a><span
+ style='mso-fareast-font-family:"Times New Roman";mso-fareast-theme-font:minor-fareast;
+ mso-no-proof:yes'><o:p></o:p></span></p>
+ <p class=MsoToc2 style='tab-stops:right dotted 539.5pt'><a
+ href="#_Toc107267631"><span style='mso-no-proof:yes'>List all dupsets</span><span
+ style='color:windowtext;display:none;mso-hide:screen;mso-no-proof:yes;
+ text-decoration:none;text-underline:none'><span style='mso-tab-count:1 dotted'>. </span></span><!--[if supportFields]><span
+ style='color:windowtext;display:none;mso-hide:screen;mso-no-proof:yes;
+ text-decoration:none;text-underline:none'><span style='mso-element:field-begin'></span>
+ PAGEREF _Toc107267631 \h <span style='mso-element:field-separator'></span></span><![endif]--><span
+ style='color:windowtext;display:none;mso-hide:screen;mso-no-proof:yes;
+ text-decoration:none;text-underline:none'>2<!--[if gte mso 9]><xml>
+  <w:data>08D0C9EA79F9BACE118C8200AA004BA90B02000000080000000E0000005F0054006F0063003100300037003200360037003600330031000000</w:data>
+ </xml><![endif]--></span><!--[if supportFields]><span style='color:windowtext;
+ display:none;mso-hide:screen;mso-no-proof:yes;text-decoration:none;text-underline:
+ none'><span style='mso-element:field-end'></span></span><![endif]--></a><span
+ style='mso-fareast-font-family:"Times New Roman";mso-fareast-theme-font:minor-fareast;
+ mso-no-proof:yes'><o:p></o:p></span></p>
+ <p class=MsoToc2 style='tab-stops:right dotted 539.5pt'><a
+ href="#_Toc107267632"><span style='mso-no-proof:yes'>Look through tables and
+ map out what to do</span><span style='color:windowtext;display:none;
+ mso-hide:screen;mso-no-proof:yes;text-decoration:none;text-underline:none'><span
+ style='mso-tab-count:1 dotted'>. </span></span><!--[if supportFields]><span
+ style='color:windowtext;display:none;mso-hide:screen;mso-no-proof:yes;
+ text-decoration:none;text-underline:none'><span style='mso-element:field-begin'></span>
+ PAGEREF _Toc107267632 \h <span style='mso-element:field-separator'></span></span><![endif]--><span
+ style='color:windowtext;display:none;mso-hide:screen;mso-no-proof:yes;
+ text-decoration:none;text-underline:none'>4<!--[if gte mso 9]><xml>
+  <w:data>08D0C9EA79F9BACE118C8200AA004BA90B02000000080000000E0000005F0054006F0063003100300037003200360037003600330032000000</w:data>
+ </xml><![endif]--></span><!--[if supportFields]><span style='color:windowtext;
+ display:none;mso-hide:screen;mso-no-proof:yes;text-decoration:none;text-underline:
+ none'><span style='mso-element:field-end'></span></span><![endif]--></a><span
+ style='mso-fareast-font-family:"Times New Roman";mso-fareast-theme-font:minor-fareast;
+ mso-no-proof:yes'><o:p></o:p></span></p>
+ <p class=MsoToc2 style='tab-stops:right dotted 539.5pt'><a
+ href="#_Toc107267633"><span style='mso-no-proof:yes'>If merge info needs
+ input, prompt for it</span><span style='color:windowtext;display:none;
+ mso-hide:screen;mso-no-proof:yes;text-decoration:none;text-underline:none'><span
+ style='mso-tab-count:1 dotted'>. </span></span><!--[if supportFields]><span
+ style='color:windowtext;display:none;mso-hide:screen;mso-no-proof:yes;
+ text-decoration:none;text-underline:none'><span style='mso-element:field-begin'></span>
+ PAGEREF _Toc107267633 \h <span style='mso-element:field-separator'></span></span><![endif]--><span
+ style='color:windowtext;display:none;mso-hide:screen;mso-no-proof:yes;
+ text-decoration:none;text-underline:none'>4<!--[if gte mso 9]><xml>
+  <w:data>08D0C9EA79F9BACE118C8200AA004BA90B02000000080000000E0000005F0054006F0063003100300037003200360037003600330033000000</w:data>
+ </xml><![endif]--></span><!--[if supportFields]><span style='color:windowtext;
+ display:none;mso-hide:screen;mso-no-proof:yes;text-decoration:none;text-underline:
+ none'><span style='mso-element:field-end'></span></span><![endif]--></a><span
+ style='mso-fareast-font-family:"Times New Roman";mso-fareast-theme-font:minor-fareast;
+ mso-no-proof:yes'><o:p></o:p></span></p>
+ <p class=MsoToc2 style='tab-stops:right dotted 539.5pt'><a
+ href="#_Toc107267634"><span style='mso-no-proof:yes'>Attempt full cleanup of a
+ dupset</span><span style='color:windowtext;display:none;mso-hide:screen;
+ mso-no-proof:yes;text-decoration:none;text-underline:none'><span
+ style='mso-tab-count:1 dotted'>. </span></span><!--[if supportFields]><span
+ style='color:windowtext;display:none;mso-hide:screen;mso-no-proof:yes;
+ text-decoration:none;text-underline:none'><span style='mso-element:field-begin'></span>
+ PAGEREF _Toc107267634 \h <span style='mso-element:field-separator'></span></span><![endif]--><span
+ style='color:windowtext;display:none;mso-hide:screen;mso-no-proof:yes;
+ text-decoration:none;text-underline:none'>5<!--[if gte mso 9]><xml>
+  <w:data>08D0C9EA79F9BACE118C8200AA004BA90B02000000080000000E0000005F0054006F0063003100300037003200360037003600330034000000</w:data>
+ </xml><![endif]--></span><!--[if supportFields]><span style='color:windowtext;
+ display:none;mso-hide:screen;mso-no-proof:yes;text-decoration:none;text-underline:
+ none'><span style='mso-element:field-end'></span></span><![endif]--></a><span
+ style='mso-fareast-font-family:"Times New Roman";mso-fareast-theme-font:minor-fareast;
+ mso-no-proof:yes'><o:p></o:p></span></p>
+ <p class=MsoToc2 style='tab-stops:right dotted 539.5pt'><a
+ href="#_Toc107267635"><span style='mso-no-proof:yes'>It worked</span><span
+ style='color:windowtext;display:none;mso-hide:screen;mso-no-proof:yes;
+ text-decoration:none;text-underline:none'><span style='mso-tab-count:1 dotted'>. </span></span><!--[if supportFields]><span
+ style='color:windowtext;display:none;mso-hide:screen;mso-no-proof:yes;
+ text-decoration:none;text-underline:none'><span style='mso-element:field-begin'></span>
+ PAGEREF _Toc107267635 \h <span style='mso-element:field-separator'></span></span><![endif]--><span
+ style='color:windowtext;display:none;mso-hide:screen;mso-no-proof:yes;
+ text-decoration:none;text-underline:none'>5<!--[if gte mso 9]><xml>
+  <w:data>08D0C9EA79F9BACE118C8200AA004BA90B02000000080000000E0000005F0054006F0063003100300037003200360037003600330035000000</w:data>
+ </xml><![endif]--></span><!--[if supportFields]><span style='color:windowtext;
+ display:none;mso-hide:screen;mso-no-proof:yes;text-decoration:none;text-underline:
+ none'><span style='mso-element:field-end'></span></span><![endif]--></a><span
+ style='mso-fareast-font-family:"Times New Roman";mso-fareast-theme-font:minor-fareast;
+ mso-no-proof:yes'><o:p></o:p></span></p>
+ <p class=MsoToc2 style='tab-stops:right dotted 539.5pt'><a
+ href="#_Toc107267636"><span style='mso-no-proof:yes'>Sometimes the magic fails</span><span
+ style='color:windowtext;display:none;mso-hide:screen;mso-no-proof:yes;
+ text-decoration:none;text-underline:none'><span style='mso-tab-count:1 dotted'>. </span></span><!--[if supportFields]><span
+ style='color:windowtext;display:none;mso-hide:screen;mso-no-proof:yes;
+ text-decoration:none;text-underline:none'><span style='mso-element:field-begin'></span>
+ PAGEREF _Toc107267636 \h <span style='mso-element:field-separator'></span></span><![endif]--><span
+ style='color:windowtext;display:none;mso-hide:screen;mso-no-proof:yes;
+ text-decoration:none;text-underline:none'>5<!--[if gte mso 9]><xml>
+  <w:data>08D0C9EA79F9BACE118C8200AA004BA90B02000000080000000E0000005F0054006F0063003100300037003200360037003600330036000000</w:data>
+ </xml><![endif]--></span><!--[if supportFields]><span style='color:windowtext;
+ display:none;mso-hide:screen;mso-no-proof:yes;text-decoration:none;text-underline:
+ none'><span style='mso-element:field-end'></span></span><![endif]--></a><span
+ style='mso-fareast-font-family:"Times New Roman";mso-fareast-theme-font:minor-fareast;
+ mso-no-proof:yes'><o:p></o:p></span></p>
+ <p class=MsoToc2 style='tab-stops:right dotted 539.5pt'><a
+ href="#_Toc107267637"><span style='mso-no-proof:yes'>List of URLs</span><span
+ style='color:windowtext;display:none;mso-hide:screen;mso-no-proof:yes;
+ text-decoration:none;text-underline:none'><span style='mso-tab-count:1 dotted'>. </span></span><!--[if supportFields]><span
+ style='color:windowtext;display:none;mso-hide:screen;mso-no-proof:yes;
+ text-decoration:none;text-underline:none'><span style='mso-element:field-begin'></span>
+ PAGEREF _Toc107267637 \h <span style='mso-element:field-separator'></span></span><![endif]--><span
+ style='color:windowtext;display:none;mso-hide:screen;mso-no-proof:yes;
+ text-decoration:none;text-underline:none'>6<!--[if gte mso 9]><xml>
+  <w:data>08D0C9EA79F9BACE118C8200AA004BA90B02000000080000000E0000005F0054006F0063003100300037003200360037003600330037000000</w:data>
+ </xml><![endif]--></span><!--[if supportFields]><span style='color:windowtext;
+ display:none;mso-hide:screen;mso-no-proof:yes;text-decoration:none;text-underline:
+ none'><span style='mso-element:field-end'></span></span><![endif]--></a><span
+ style='mso-fareast-font-family:"Times New Roman";mso-fareast-theme-font:minor-fareast;
+ mso-no-proof:yes'><o:p></o:p></span></p>
+ <p class=MsoToc2 style='tab-stops:right dotted 539.5pt'><a
+ href="#_Toc107267638"><span style='mso-no-proof:yes'>List of Tables</span><span
+ style='color:windowtext;display:none;mso-hide:screen;mso-no-proof:yes;
+ text-decoration:none;text-underline:none'><span style='mso-tab-count:1 dotted'>. </span></span><!--[if supportFields]><span
+ style='color:windowtext;display:none;mso-hide:screen;mso-no-proof:yes;
+ text-decoration:none;text-underline:none'><span style='mso-element:field-begin'></span>
+ PAGEREF _Toc107267638 \h <span style='mso-element:field-separator'></span></span><![endif]--><span
+ style='color:windowtext;display:none;mso-hide:screen;mso-no-proof:yes;
+ text-decoration:none;text-underline:none'>7<!--[if gte mso 9]><xml>
+  <w:data>08D0C9EA79F9BACE118C8200AA004BA90B02000000080000000E0000005F0054006F0063003100300037003200360037003600330038000000</w:data>
+ </xml><![endif]--></span><!--[if supportFields]><span style='color:windowtext;
+ display:none;mso-hide:screen;mso-no-proof:yes;text-decoration:none;text-underline:
+ none'><span style='mso-element:field-end'></span></span><![endif]--></a><span
+ style='mso-fareast-font-family:"Times New Roman";mso-fareast-theme-font:minor-fareast;
+ mso-no-proof:yes'><o:p></o:p></span></p>
+ <p class=MsoToc2 style='tab-stops:right dotted 539.5pt'><a
+ href="#_Toc107267639"><span style='mso-no-proof:yes'>List of Code</span><span
+ style='color:windowtext;display:none;mso-hide:screen;mso-no-proof:yes;
+ text-decoration:none;text-underline:none'><span style='mso-tab-count:1 dotted'>. </span></span><!--[if supportFields]><span
+ style='color:windowtext;display:none;mso-hide:screen;mso-no-proof:yes;
+ text-decoration:none;text-underline:none'><span style='mso-element:field-begin'></span>
+ PAGEREF _Toc107267639 \h <span style='mso-element:field-separator'></span></span><![endif]--><span
+ style='color:windowtext;display:none;mso-hide:screen;mso-no-proof:yes;
+ text-decoration:none;text-underline:none'>9<!--[if gte mso 9]><xml>
+  <w:data>08D0C9EA79F9BACE118C8200AA004BA90B02000000080000000E0000005F0054006F0063003100300037003200360037003600330039000000</w:data>
+ </xml><![endif]--></span><!--[if supportFields]><span style='color:windowtext;
+ display:none;mso-hide:screen;mso-no-proof:yes;text-decoration:none;text-underline:
+ none'><span style='mso-element:field-end'></span></span><![endif]--></a><span
+ style='mso-fareast-font-family:"Times New Roman";mso-fareast-theme-font:minor-fareast;
+ mso-no-proof:yes'><o:p></o:p></span></p>
+ <p class=MsoNormal><!--[if supportFields]><b><span style='mso-no-proof:yes'><span
+ style='mso-element:field-end'></span></span></b><![endif]--><o:p>&nbsp;</o:p></p>
+</w:Sdt>
+
+<h1>Hotlinks</h1>
+<ul>
+	<li><a class="action" href="{{ url_for('.showlist') }}">ShowList</a></li>
+	<li><a class="action" href="{{ url_for('.transposedssncheck') }}">Transposed SSN Check</a></li>
+	<li><a class="action" href="{{ url_for('.refreshdups') }}">Refresh Dups</a></li>
+	<li><a class="action" href="{{ url_for('.refreshdek') }}">Refresh Dup Extra Keys</a></li>
+</ul>
+
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<h2><a name="_Toc107267628">General use of website</a></h2>
+
+<p class=MsoNormal>This solution was written for Jenzabar One SIS for one
+community college. If it can be used
+elsewhere, enjoy. If you make a fortune
+off it, please give to charity often.</p>
+
+<p class=MsoNormal>You can click on the Duplicate Cleanup header at the top
+left of each page to return to this page from any subpage.</p>
+
+<p class=MsoNormal>This solution is built on Flask/Jinja2 on Windows. Go.bat should start everything if venv/virtual environment is setup with python, and pip/package
+dependencies are met. This is not a
+production environment. It is designed
+for one person to use as needed, from a workstation, then turn it off when
+done.</p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<h2><a name="_Toc107267629">Identify Dups</a></h2>
+
+<p class=MsoNormal>Dups are defined in NameMaster. The
+BAD record(s) are flagged, either the BIRTH_NAME or PREFERRED_NAME field starts
+with &quot;dup&quot; or &quot;use&quot;, and the good id is in one of these two
+fields. In this example, NameMaster has 4344423
+designated as the good id since it's noted in the Preferred_Name
+of 4347137, along with the word "duplicate" in Birth_Name. Therefore, 4347137 is the bad id, and 4344423
+is the good id.</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shapetype
+ id="_x0000_t75" coordsize="21600,21600" o:spt="75" o:preferrelative="t"
+ path="m@4@5l@4@11@9@11@9@5xe" filled="f" stroked="f">
+ <v:stroke joinstyle="miter"/>
+ <v:formulas>
+  <v:f eqn="if lineDrawn pixelLineWidth 0"/>
+  <v:f eqn="sum @0 1 0"/>
+  <v:f eqn="sum 0 0 @1"/>
+  <v:f eqn="prod @2 1 2"/>
+  <v:f eqn="prod @3 21600 pixelWidth"/>
+  <v:f eqn="prod @3 21600 pixelHeight"/>
+  <v:f eqn="sum @0 0 1"/>
+  <v:f eqn="prod @6 1 2"/>
+  <v:f eqn="prod @7 21600 pixelWidth"/>
+  <v:f eqn="sum @8 21600 0"/>
+  <v:f eqn="prod @7 21600 pixelHeight"/>
+  <v:f eqn="sum @10 21600 0"/>
+ </v:formulas>
+ <v:path o:extrusionok="f" gradientshapeok="t" o:connecttype="rect"/>
+ <o:lock v:ext="edit" aspectratio="t"/>
+</v:shapetype><v:shape id="Picture_x0020_8" o:spid="_x0000_i1037" type="#_x0000_t75"
+ style='width:236.25pt;height:45.75pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="/static/templates/duplicate_cleanup/DuplicateCleanup_files/image001.emz" o:title=""/>
+</v:shape><![endif]--><![if !vml]><img width=315 height=61
+src="{{ url_for('static', filename='DuplicateCleanup_files/identifydups.png') }}" v:shapes="Picture_x0020_8"><![endif]></span></p>
+
+<p class=MsoNormal>Each set of duplicates has a "dupset" number.<span
+style='mso-spacerun:yes'>  </span>This integer changes with refreshes, but
+during the merge process, it anchors the one good id and all bad ids together
+as a set. Any time you see a comma
+separated list of IDs, the first one is the good ID, all others are bad (sorted
+ascending).</p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<h2><a name="_Toc107267630">Define all tables to look for dups in</a></h2>
+
+<p class=MsoNormal>DupExtraKeys is a complete list of
+tables that might have records needing merges.<span style='mso-spacerun:yes'>  
+</span>This table list is ordered to attempt to streamline updates with minimal
+errors. If you find this to be in error,
+you can change this in the dbsetup.py file, then run it to refresh everything
+that these changes affect. Additionally,
+we must consider how each of these tables store the records within them. Extra keys, xkeys,
+are the column(s) that each id_num (or <span
+class=SpellE>appid</span>) should only have one ID within, if applicable. 
+The example below shows that AD_ORG_TRACKING
+table demands only one ID for each ORG_ID__AD. It also shows that ORG_TRACKING 
+does not have any xkeys.</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_11" o:spid="_x0000_i1036" type="#_x0000_t75" alt="Text&#10;&#10;Description automatically generated"
+ style='width:540pt;height:91.5pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="/static/templates/duplicate_cleanup/DuplicateCleanup_files/image003.png" o:title="Text&#10;&#10;Description automatically generated"/>
+</v:shape><![endif]--><![if !vml]><img width=720 height=122
+src="{{ url_for('static', filename='DuplicateCleanup_files/image004.gif') }}"
+alt="Text&#10;&#10;Description automatically generated" v:shapes="Picture_x0020_11"><![endif]></span></p>
+
+<p class=MsoNormal>As you work with this program, you may find things that need
+to be changed within these xkeys. This program is made to be updated and
+refreshed frequently, to tune it in to your situation.</p>
+
+<p class=MsoNormal>Each table may also have a "defaultaction",
+of delete, update or shuffle. Delete
+just means always delete any badid records. If you've moved all transcript 
+info to the new ID, this may be the right
+choice. Update just updates all badid
+records to the goodid, rather than trying to do any
+merges. The Shuffle option is the most
+complicated. A full example is in the tables section, but the previous and
+following screenshots show how I changed the ORG_Tracking
+from a shuffle to an update after learning the shuffle failed. The -- comments 
+in this SQL work because the
+variable is multi lined to include the newlines.</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_10" o:spid="_x0000_i1035" type="#_x0000_t75" alt="Text&#10;&#10;Description automatically generated"
+ style='width:510.75pt;height:231pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="/static/templates/duplicate_cleanup/DuplicateCleanup_files/image005.png" o:title="Text&#10;&#10;Description automatically generated"/>
+</v:shape><![endif]--><![if !vml]><img width=681 height=308
+src="{{ url_for('static', filename='DuplicateCleanup_files/image006.jpg') }}"
+alt="Text&#10;&#10;Description automatically generated" v:shapes="Picture_x0020_10"><![endif]></span></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<h2><a name="_Toc107267631">List all dupsets</a></h2>
+
+<p class=MsoNormal>Once these setup steps are done, you can show the list of
+all dups. If you've never visited the
+page, a refresh takes the <span class=SpellE>NameMaster</span> flagged <span
+class=SpellE>dupsets</span>, and puts them into their <span class=SpellE>dupsets</span>.<span
+style='mso-spacerun:yes'>  </span>The ones flagged correctly in <span
+class=SpellE>NameMaster</span> will say &quot;human verified&quot;, but still
+may have errors. </p>
+
+<p class=MsoNormal>There is also a check from BIOGRAPH_MASTER showing dup SSN
+records. Duplicate SSNs should not be possible
+but were apparently permitted on the data import process.<span
+style='mso-spacerun:yes'>  </span><span class=SpellE>Dupsets</span> are listed
+on the this list near the bottom <span class=GramE>with "<span class=SpellE>GoodID</span></span>
+unknown" note, along with "From BIOGRAPH_MASTER".</p>
+
+<p class=MsoNormal>Below shows this page along with some common errors.<br><span
+style='color:red;mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_9"
+ o:spid="_x0000_i1034" type="#_x0000_t75" alt="Graphical user interface, text, application, email&#10;&#10;Description automatically generated"
+ style='width:433.5pt;height:421.5pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="/static/templates/duplicate_cleanup/DuplicateCleanup_files/image007.png" o:title="Graphical user interface, text, application, email&#10;&#10;Description automatically generated"/>
+</v:shape><![endif]--><![if !vml]><img width=578 height=562
+src="{{ url_for('static', filename='DuplicateCleanup_files/image008.jpg') }}"
+alt="Graphical user interface, text, application, email&#10;&#10;Description automatically generated"
+v:shapes="Picture_x0020_9"><![endif]></span></p>
+
+<p class=MsoNormal>Dupset 1 shows 5 IDs in this example, all partially flagged
+in <span class=SpellE>NameMaster</span>, but none of them properly identify
+their <span class=SpellE>GoodID</span>. <span style='mso-spacerun:yes'> </span>The
+missing <span class=SpellE>GoodID</span> is replaced by 0 and they are all
+clumped together into Dupset 1, every time.<span style='mso-spacerun:yes'> 
+</span>Even if there is only one missing <span class=SpellE>goodid</span>, then
+the set will only have one record, but it will be dupset 1.<span
+style='mso-spacerun:yes'>  </span>If Dupset 1 is a regular merge, then there
+are none missing <span class=SpellE>goodids</span>.</p>
+
+<p class=MsoNormal>Dupset 2, 3 and 4 all show only one ID, the good one.<span
+style='mso-spacerun:yes'>  </span>They each improperly have flagged themselves
+as the good id, so we don't know the bad ids.</p>
+
+<p class=MsoNormal>Dupset 5 is done correctly.<span style='mso-spacerun:yes'> 
+</span>The Good ID of 4366423 is flagged in the <span class=SpellE>Preferred_Name</span>
+field of the bad record, id 4367137. The
+<span class=SpellE>Birth_Name</span> also starts with "DUP" (or "USE"), so
+everything is noted correctly.</p>
+
+<p class=MsoNormal>Dupset 6 came from a duplicate SSN in BIOGRAPH_MASTER.<span
+style='mso-spacerun:yes'>  </span>These IDs are not already identified as
+duplicates, or they would not be listed again here.<span
+style='mso-spacerun:yes'>  </span>These will take some human research to
+determine the correct <span class=SpellE>GoodID</span>, then the corrective
+action should be to flag the bad ID(s) correctly in production, and then
+refresh the Play database, or update the record(s) in Play also.<span
+style='mso-spacerun:yes'>  </span>A /<span class=SpellE>refreshdups</span> will
+then pick it right up in the next /<span class=SpellE>showlist</span>.</p>
+
+<p class=MsoNormal>The keen observer may have noticed a small target link next
+to the word reset by each dupset. This
+link will /<span class=SpellE>resetdupset</span> that <span class=SpellE>dupset</span>,
+deleting any <span class=SpellE>dupsinprogress</span> and merge info, then
+refreshing to /<span class=SpellE>showdupset</span> page for that dupset.<span
+style='mso-spacerun:yes'>  </span>This is rarely needed, as the first time
+entering each dupset detail page, the data is refreshed automatically.</p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<h2><a name="_Toc107267632">Look through tables and map out what to do</a></h2>
+
+<p class=MsoNormal>When you go to a /<span class=SpellE>showdupset</span> page
+for a dupset, processing tries to start.<span style='mso-spacerun:yes'> 
+</span>If this dupset was never <span class=GramE>run, <span
+style='mso-spacerun:yes'> </span>(</span>or just refreshed), then it loops over
+each <span class=SpellE>DupExtraKeys</span> record looking for any records in
+that table with those <span class=SpellE>xkeys</span> for any of the ids in the
+dupset. If there are any, they are noted
+along with the exact <span class=SpellE>xkey</span> combination in <span
+class=SpellE>DupsInProgres</span> table.<span style='mso-spacerun:yes'> 
+</span>Once that's done, it looks to see if there are any merges.</p>
+
+<h2><a name="_Toc107267633">If merge info needs input, prompt for it</a></h2>
+
+<p class=MsoNormal>When you go to a /<span class=SpellE>showdupset</span> page,
+"merge" records probably need your input.<span style='mso-spacerun:yes'> 
+</span>In merge cases, the system goes through each column and picks the
+value(s) with the best data, if it's obvious; 0 is not as good as a number,
+blank is not as good as a value, duplicate values don't need changing, some
+columns are ignored. If anything remains
+unanswered, like a choice of two non 0 numbers, you are presented with a form
+to make your selection. This screen
+defaults to a simple view of only the fields that need your attention, and the
+ID fields. You can toggle the other
+fields visibility with links at the top or right of the page.<span
+style='mso-spacerun:yes'>  </span>Screenshot follows.</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_7" o:spid="_x0000_i1033" type="#_x0000_t75" alt="Graphical user interface, application&#10;&#10;Description automatically generated"
+ style='width:426pt;height:439.5pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="/static/templates/duplicate_cleanup/DuplicateCleanup_files/image009.png" o:title="Graphical user interface, application&#10;&#10;Description automatically generated"/>
+</v:shape><![endif]--><![if !vml]><img width=568 height=586
+src="{{ url_for('static', filename='DuplicateCleanup_files/image010.gif') }}"
+alt="Graphical user interface, application&#10;&#10;Description automatically generated"
+v:shapes="Picture_x0020_7"><![endif]></span></p>
+
+<p class=MsoNormal>You can toggle the SQL, but it is not exactly what will be
+used by the program, but it is very close.<span style='mso-spacerun:yes'> 
+</span>It's only available on this screen as a carryover from a previous
+iteration of the program. It lacks all
+the non-merge tables, and each section is not necessarily used.</p>
+
+<p class=MsoNormal><span style='mso-spacerun:yes'>   </span>Once a selection is
+made, you can hit Enter, scroll down to the next missing value, or click the
+"Check for missing required fields" submit button.<span
+style='mso-spacerun:yes'>  </span>Once all selections are made, clicking on the
+submit button will signal the program to attempt a full cleanup.<span
+style='mso-spacerun:yes'>  </span>If you hit "Cancel" on the final popup
+confirmation, it will continue (ignoring your cancellation) to process, so if
+you were trying to print to PDF or something first, do it quickly, before the
+page can refresh.</p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<h2><a name="_Toc107267634">Attempt full cleanup of a dupset</a></h2>
+
+<p class=MsoNormal>By now, we have a solid set of DupsInProgress records and
+any merge entries standing by. Each of
+the DIP records have a <span class=SpellE>defaultaction</span> of delete,
+update or shuffle (skips are ignored).</p>
+
+<p class=MsoNormal>Delete seems simple enough, just try to delete the
+record. If it works, remove the command
+from the list, but if it fails, note that also, and try again later, maybe it
+just needs another table to clean up those records first.</p>
+
+<p class=MsoNormal>Update is less simple.<span style='mso-spacerun:yes'> 
+</span>First, we try to update all ids on the badid records to the <span
+class=SpellE>goodid</span>. If this
+fails, then we try to insert a new record using all the badid info except replacing
+the badid with the good one. Then we try
+to delete the badid. <span class=GramE>Generally</span>
+one of these work, but if not, back on the try again pile.</p>
+
+<p class=MsoNormal>Shuffle runs a series of updates.<span
+style='mso-spacerun:yes'>  </span>The SEQ field is increased by ones starting
+at 1 above the largest former SEQ <span class=GramE>number, and</span> sorted
+by job time. Then all the applicable
+records are decreased by the offset so the lowest one is back to the value the
+lowest one had in the beginning, and the others are left incrementing upward by
+ones. If these updates fail, the table
+probably shouldn't be in the shuffle list.</p>
+
+<p class=MsoNormal>Merges run any updates, then <span class=GramE>Delete</span>.<span
+style='mso-spacerun:yes'>  </span>If those steps fail, they try to do the
+insert trick that Update uses above, then the merge, then delete.</p>
+
+<p class=MsoNormal>If part any part of the sequences worked, then a flag is set
+to signify the process has not stalled out.<span style='mso-spacerun:yes'> 
+</span>If it does stall out, or everything finishes, then it resets the
+database once to check for new history records.<span style='mso-spacerun:yes'> 
+</span>If it fails, or loops 15 times without making progress, the program
+aborts. The web output is duplicated in
+a text file named \<span class=SpellE>SQLActions</span> \[goodid<span
+class=GramE>].sql.txt</span> .</p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<h2><a name="_Toc107267635">It worked</a></h2>
+
+<p class=MsoNormal>After a merge, the last thing noted is the success or
+errors. Looking at the end of a
+successful file, you'll see:<br>
+<span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_12"
+ o:spid="_x0000_i1032" type="#_x0000_t75" alt="Graphical user interface, text, application, email&#10;&#10;Description automatically generated"
+ style='width:350.25pt;height:108.75pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="/static/templates/duplicate_cleanup/DuplicateCleanup_files/image011.png" o:title="Graphical user interface, text, application, email&#10;&#10;Description automatically generated"/>
+</v:shape><![endif]--><![if !vml]><img width=467 height=145 border=1
+src="{{ url_for('static', filename='DuplicateCleanup_files/image012.jpg') }}"
+alt="Graphical user interface, text, application, email&#10;&#10;Description automatically generated"
+v:shapes="Picture_x0020_12"><![endif]></span></p>
+
+<p class=MsoNormal>The website is similar, although the indented comments are
+smushed together. So, now you can review
+transcript detail, fees, advisor/phone/address history, and other records in
+Play to see if this merge is exactly what you want.<span
+style='mso-spacerun:yes'>  </span>When you're ready to apply these same changes
+to production, open the text file, replace all instances of the play database
+name with the live database, review carefully, and it should run.<span
+style='mso-spacerun:yes'>  </span>You can also modify this file by removing
+some or all the comments also, but do not re-order the SQL statements.</p>
+
+<h2><a name="_Toc107267636">Sometimes the magic fails</a></h2>
+
+<p class=MsoNormal>Sometimes, there is an error.<span
+style='mso-spacerun:yes'>  </span>This screenshot is taken from the website, and
+you can see the TEST_SCORES and TEST_SCORES_DETAIL <span class=GramE>are</span>
+failing to shuffle.</p>
+
+<p class=MsoNormal><span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape
+ id="Picture_x0020_13" o:spid="_x0000_i1031" type="#_x0000_t75" alt="Text&#10;&#10;Description automatically generated"
+ style='width:493.5pt;height:390.75pt;visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="/static/templates/duplicate_cleanup/DuplicateCleanup_files/image013.png" o:title="Text&#10;&#10;Description automatically generated"/>
+</v:shape><![endif]--><![if !vml]><img width=658 height=521
+src="{{ url_for('static', filename='DuplicateCleanup_files/image014.jpg') }}"
+alt="Text&#10;&#10;Description automatically generated" v:shapes="Picture_x0020_13"><![endif]></span></p>
+
+<p class=MsoNormal>It appears that it looped 3 times before it could tell it
+was stuck. The '<span class=SpellE>try':'S</span>'
+means to try to shuffle using the 'S' SQL.<span style='mso-spacerun:yes'> 
+</span>The 'info' SQL is sometimes helpful also.<span
+style='mso-spacerun:yes'>  </span>Looking at this record, I believe that the
+TEST_SCORES tables should not be shuffle.<span style='mso-spacerun:yes'> 
+</span>So, to fix this and keep moving forward, <span class=GramE>We</span>
+should edit the DEK settings in dbsetup.py to comment out these tables from the
+shuffle section. Review the tables and move
+them to update or delete if needed, otherwise, they will land in the "normal"
+merge type record. Once this change is
+made, I'd run dbsetup.py to refresh all the data, then reload /<span
+class=SpellE>showlist</span> page and find my <span class=SpellE>goodid</span>
+again (it might have a different dupset number), then run that dupset.<span
+style='mso-spacerun:yes'>  </span>This will append more to the same output text
+<span class=GramE>file, and</span> may succeed.<span style='mso-spacerun:yes'> 
+</span>While it should be safe to run this SQL file against production, some
+might feel safer renaming the file, refreshing the play database from live,
+refreshing the dupset which starts the process again from scratch on this
+dupset (with the newer better DEK settings). <span
+style='mso-spacerun:yes'> </span>This will have a slightly smaller SQL output
+file, but it will be cleaner, especially if you tinkered with the data to get
+the merge to finalize before the refresh.</p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<h2><a name="_Toc107267637">List of URLs</a></h2>
+
+<p class=MsoNormal><b>/<span class=SpellE><span class=GramE>refreshdups</span></span><o:p></o:p></b></p>
+
+<p class=MsoNormal style='text-indent:.5in'>refresh the dups by deleting all <span
+class=SpellE>DupsInProgress</span> and <span class=SpellE>dupset</span> groups,
+then repopulating the <span class=SpellE>dupsets</span> from <span
+class=SpellE>NameMaster</span> and SSN checks. </p>
+
+<p class=MsoNormal><b>/<span class=SpellE><span class=GramE>refreshdek</span></span>
+<o:p></o:p></b></p>
+
+<p class=MsoNormal style='text-indent:.5in'>refresh the duplicate extra key
+list (SQL defined in dbsetup.py).<span style='mso-spacerun:yes'> 
+</span>Generally, I would recommend you change the SQL in dbsetup.py, then just
+run this python file to allow it to refresh <span class=SpellE>DupExtraKeys</span>
+and <span class=SpellE>DupsInProgress</span>.</p>
+
+<p class=MsoNormal><b>/<span class=SpellE><span class=GramE>showlist</span></span>
+<o:p></o:p></b></p>
+
+<p class=MsoNormal style='text-indent:.5in'>List of all dup sets.<span
+style='mso-spacerun:yes'>  </span>Show if each is human verified.<span
+style='mso-spacerun:yes'>  </span>Includes links to show/reset each dupset</p>
+
+<p class=MsoNormal><b>/<span class=SpellE>showdupset</span>/&lt;<span
+class=SpellE>dupset</span>&gt;<o:p></o:p></b></p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>                </span>Shows
+details of this dupset. If the merges
+are met, this will go into the merge process for this dupset.<span
+style='mso-spacerun:yes'>  </span>Output of this final step goes to the screen,
+and also appends to a text file named &lt;<span class=SpellE>goodid</span><span
+class=GramE>&gt;.sql.txt</span> stored in \<span class=SpellE>SQLActions</span>.<span
+style='mso-spacerun:yes'>  </span>This file can be used to perform the final
+live update by replacing the database name throughout the file.<span
+style='mso-spacerun:yes'>  </span>Do not re-order the file, but deleting all
+comments is OK.</p>
+
+<p class=MsoNormal><b>/<span class=SpellE>resetdupset</span>/&lt;<span
+class=SpellE>dupset</span>&gt;<o:p></o:p></b></p>
+
+<p class=MsoNormal style='text-indent:.5in'>This deletes and rebuilds all
+DupsInProgress info on this dupset, then passes you to /<span class=SpellE>showdupset</span>
+page. If you changed something in the
+code, or refreshed the Play database, or ran /<span class=SpellE>refreshdek</span>,
+then you should do this.</p>
+
+<p class=MsoNormal><b>/<span class=SpellE><span class=GramE>transposedssncheck</span></span><o:p></o:p></b></p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>                </span>Check
+for cases where 2 digits transposed in an SSN matches another record.<span
+style='mso-spacerun:yes'>  </span>These sets are less likely to contain
+duplicates, but those with matching first and/or last names are listed first,
+and then the others are listed. Since
+these are not looking at <span class=SpellE>NameMaster</span>, they may or may
+not already be on the dupset list. </p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<h2><a name="_Toc107267638">List of Tables</a></h2>
+
+<p class=MsoNormal>The create statements for these SQL tables and views are all
+available in /<span class=SpellE>SQLinitialBuild</span> folder.</p>
+
+<p class=MsoNormal><span class=SpellE><b>BAY_DupExtraKeys</b></span><b><o:p></o:p></b></p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>                </span>This
+table holds one row per table. It
+defines how each table can have ID numbers stored, in that only one record is
+allowed per "<span class=SpellE>xkey</span>".<span style='mso-spacerun:yes'> 
+</span>This example shows the ADVISOR_STUD_TABLE and the fact that it should
+only have one ID_NUM with each distinct set of <span class=SpellE>Advisor_ID</span>,
+<span class=SpellE>Div_CDE</span>, and <span class=SpellE>Seq_NUM</span>.<br>
+<span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_2"
+ o:spid="_x0000_i1030" type="#_x0000_t75" style='width:468pt;height:27pt;
+ visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="/static/templates/duplicate_cleanup/DuplicateCleanup_files/image015.emz" o:title=""/>
+</v:shape><![endif]--><![if !vml]><img width=624 height=36
+src="{{ url_for('static', filename='DuplicateCleanup_files/DupExtraKeys.png') }}" v:shapes="Picture_x0020_2"><![endif]></span></p>
+
+<p class=MsoNormal style='text-indent:.5in'>Shuffle is a special <span class=SpellE>defaultaction</span>.<span
+style='mso-spacerun:yes'>  </span>This means the code will take all the <span
+class=SpellE>Advisor_ID</span>, <span class=SpellE>Div_CDE</span> distinct
+combinations for all records with any of the <span class=SpellE>goodids</span>
+or <span class=SpellE>badIDs</span> (in this one dupset) and shuffle them
+together with distinct SEQ_NUMs.</p>
+
+<p class=MsoNormal style='text-indent:.5in'>Another example is <span
+class=SpellE>NameAddressMaster</span>. The
+<span class=SpellE>xkeys</span> declares that each ADDR_CDE can only have one
+ID. The ID is <span class=GramE>actually
+the</span> <span class=SpellE>appid</span> in this case, using comparing that
+to the table column <span class=SpellE>NameMasterAppID</span> column (case
+insensitive). When referring to
+individual records in this table, it's <span class=SpellE>tableuniqkey</span>
+of <span class=SpellE>AppID</span> will be used.<span
+style='mso-spacerun:yes'>  </span>The default action is not set on this table,
+this is optional.<br>
+<span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_3"
+ o:spid="_x0000_i1029" type="#_x0000_t75" style='width:447.75pt;height:30.75pt;
+ visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="/static/templates/duplicate_cleanup/DuplicateCleanup_files/image017.emz" o:title=""/>
+</v:shape><![endif]--><![if !vml]><img width=597 height=41
+src="{{ url_for('static', filename='DuplicateCleanup_files/DupExtraKeys2.png') }}" v:shapes="Picture_x0020_3"><![endif]></span></p>
+
+<p class=MsoNormal>The <span class=SpellE>xkeys</span> are optional also, and
+there are some tables that don't have them, like ADV_MASTER.<span
+style='mso-spacerun:yes'>  </span>In some <span class=GramE>cases</span> there
+should only be one record per ID in the table, in others it doesn't matter and
+multiple records are allowed. With no <span
+class=SpellE>xkeys</span>, the <span class=SpellE>defaultaction</span> can be
+update, delete, or left blank.</p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal><span class=SpellE><b>BAY_DupIDs</b></span><b><o:p></o:p></b></p>
+
+<p class=MsoNormal style='text-indent:.5in'>This table holds one row per ID_NUM
+and defines all the ids in each dupset.<span style='mso-spacerun:yes'> 
+</span>Important columns: Dupset int, ID_NUM int, <span class=SpellE>human_verified</span>
+bit, <span class=SpellE>GoodID</span> int.<span style='mso-spacerun:yes'> 
+</span>Ex: <br>
+<span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_4"
+ o:spid="_x0000_i1028" type="#_x0000_t75" style='width:300.75pt;height:45.75pt;
+ visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="/static/templates/duplicate_cleanup/DuplicateCleanup_files/image019.emz" o:title=""/>
+</v:shape><![endif]--><![if !vml]><img width=401 height=61
+src="{{ url_for('static', filename='DuplicateCleanup_files/DupIDs.png') }}" v:shapes="Picture_x0020_4"><![endif]></span></p>
+
+<p class=MsoNormal><span class=SpellE><b>BAY_DupsInProgress</b></span><b><o:p></o:p></b></p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>                </span>This
+working table holds one row per table and <span class=SpellE>xkey</span>
+combination for records involving each dupset.<span style='mso-spacerun:yes'> 
+</span>This example shows that dupset 81 has records that need to be merged in
+the <span class=SpellE>NameAddressMaster</span> table, where there is one good,
+and one bad id record with ADDR_CDE of '*LHP' and '<span class=SpellE>AddressCodeDefAppID</span>'
+of -2. This <span class=SpellE>cnt</span>
+of 1,1 (one good id, 1 of the bad id) leads to the decision of categorizing
+this as a "merge", possibly needing human input to update the <span
+class=SpellE>goodid</span> record, then deleting the badid record.<br>
+<span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_1"
+ o:spid="_x0000_i1027" type="#_x0000_t75" style='width:468pt;height:24pt;
+ visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="/static/templates/duplicate_cleanup/DuplicateCleanup_files/image021.emz" o:title=""/>
+</v:shape><![endif]--><![if !vml]><img width=624 height=32
+src="{{ url_for('static', filename='DuplicateCleanup_files/DupsInProgress.png') }}" v:shapes="Picture_x0020_1"><![endif]></span></p>
+
+<p class=MsoNormal><span class=SpellE><b>BAY_PKConstraints</b></span><b><o:p></o:p></b></p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>                </span>This
+table holds the primary key constraints of many of the tables in the <span
+class=SpellE>DupExtraKeys</span> table.<span style='mso-spacerun:yes'> 
+</span>If a record exists in this table, the "cols" in it will overwrite <span
+class=SpellE>DupExtraKeys.tableuniqkey</span> upon a <span class=SpellE>refreshdek</span>.<br>
+<span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_5"
+ o:spid="_x0000_i1026" type="#_x0000_t75" style='width:4in;height:45.75pt;
+ visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="/static/templates/duplicate_cleanup/DuplicateCleanup_files/image023.emz" o:title=""/>
+</v:shape><![endif]--><![if !vml]><img width=384 height=61
+src="{{ url_for('static', filename='DuplicateCleanup_files/PKConstraints.png') }}" v:shapes="Picture_x0020_5"><![endif]></span></p>
+
+<p class=MsoNormal><span class=SpellE><b>BAY_SoundEx</b></span><b><o:p></o:p></b></p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>                </span>This
+table is built, populated, and used within <span class=GramE>it's</span> SQL
+code to identify possible duplicate people by the fact they have the same
+sounding first and last names. The SQL
+file also includes some minor trim cleanup to correct whitespace data entry.</p>
+
+<p class=MsoNormal><span class=SpellE><b>BAY_UniqueIndexes</b></span><b><o:p></o:p></b></p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>                </span>Not
+sure if this is used anywhere. Seemed
+like a good idea at one time.</p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal><span class=SpellE><b>BAY_dipidMergeSelections</b></span><b><o:p></o:p></b></p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>                </span>Once
+the user selects merge options for a dupset, each DupsInProgress with
+category='merge' record should have an answer to be stored in this table.<span
+style='mso-spacerun:yes'>  </span>They are stored with the dupset listed, but
+it is only for reference. The SQL column
+may be empty, or contain updates with actual values, or references to the badid
+record values using T# where the # is the number of the badid, T1= first badid,
+etc.<br>
+<span style='mso-no-proof:yes'><!--[if gte vml 1]><v:shape id="Picture_x0020_6"
+ o:spid="_x0000_i1025" type="#_x0000_t75" style='width:468pt;height:28.5pt;
+ visibility:visible;mso-wrap-style:square'>
+ <v:imagedata src="/static/templates/duplicate_cleanup/DuplicateCleanup_files/image025.emz" o:title=""/>
+</v:shape><![endif]--><![if !vml]><img width=624 height=38
+src="{{ url_for('static', filename='DuplicateCleanup_files/dipidMergeSelections.png') }}" v:shapes="Picture_x0020_6"><![endif]></span></p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>                </span>During
+the final process where the SQL is processed on the server, the dupset will be
+refreshed, and these merge records will remain to be joined back against the
+tables as needed. The goal here is to
+not keep asking the user for input it already received.<span
+style='mso-spacerun:yes'>  </span>The refreshing of the dupset can create more
+records in history tables and such, and sometimes those records do require user
+input to merge. If this happens, the
+program will stop and ask you to manually refresh the webpage to get your
+input.</p>
+
+<p class=MsoNormal><span class=SpellE><b>BAY_sp_dupBIOGRAPH_MASTER_TmsEPly</b></span><b><o:p></o:p></b></p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>                </span>These
+duplicate SSNs must have been inserted during a conversion since you can't do
+it normally. Since they are identical,
+they are <span class=GramE>definitely duplicates</span>, but since we don't
+look at <span class=SpellE>namemaster</span>, they are not Human Verified.<span
+style='mso-spacerun:yes'>  </span>They may be duplicated from the Human
+Verified list, but if they remain after you process all the human verified
+ones, then they </p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<p class=MsoNormal><span class=SpellE><b>vw_BAY_InvalidSSNs</b></span><b><o:p></o:p></b></p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>                </span>Not
+really a duplicate issue, but in the spirit of cleaning up data, here's a view
+to look through invalid SSNs.</p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+<h2><a name="_Toc107267639">List of Code</a></h2>
+
+<p class=MsoNormal>Notable files listed <span class=GramE>here,</span> this is
+not a complete list.</p>
+
+<p class=MsoNormal><b>notes.txt<o:p></o:p></b></p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>                </span>very rough notes about this project</p>
+
+<p class=MsoNormal><b>myflaskrsecrets.py<o:p></o:p></b></p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>                </span>Database, LDAP, and other setup 
+	variables are stored in here.  An example file named myflaskrsecretsFIXME.py is included as a starting point. </p>
+
+<p class=MsoNormal><b>flaskr/duplicate_cleanup.py<o:p></o:p></b></p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>                </span>contains
+blueprints defining valid URLs</p>
+
+<p class=MsoNormal><b>flaskr/models/SSNTransposedChecker.py<o:p></o:p></b></p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>                </span>The
+class <span class=SpellE>SSNTransposedCheck</span> is defined</p>
+
+<p class=MsoNormal><b>flaskr/models/dbsetup.py<o:p></o:p></b></p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>                </span>The
+class <span class=SpellE>Dbsetup</span> is defined here.<span
+style='mso-spacerun:yes'>  </span>If run manually, this program will <span
+class=SpellE>refreshdek</span>, then refreshdups,
+then grabs a list of the dups and display a few.</p>
+
+<p class=MsoNormal><b>flaskr/models/dupsets.py<o:p></o:p></b></p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>                </span>The
+class Dupset id defined here. This
+program can be run manually over one or more of the <span class=SpellE>dupsets</span>,
+resetting them, auto selecting merge info (just taking <span class=SpellE>goodid</span>
+info only), and attempting the merge(s).<span style='mso-spacerun:yes'> 
+</span>Output is added to text file if run this way, or via web interface.</p>
+
+<p class=MsoNormal align=right style='text-align:right'><i><span
+style='font-size:9.0pt;line-height:107%'>D<sub>0</sub>cument last modified 6/2022 by Bryan, <span
+class=SpellE>duplicatecleanup</span> at <span class=SpellE>yatesc<sub>0</sub>nsulting</span>
+dotc<sub>0</sub>m<o:p></o:p></span></i></p>
+
+</div>
+{% endblock %}
