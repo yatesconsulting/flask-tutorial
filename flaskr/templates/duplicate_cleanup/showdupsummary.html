@@ -9,6 +9,9 @@
   <hr />
     <a href="{{ url_for('duplicate_cleanup.showdupset', dupset = row.dupset+0) }}">Dupset {{ row.dupset }} Details</a>
   &middot;
+  reset 
+  <a href="{{ url_for('duplicate_cleanup.resetdupset', dupset = row.dupset+0) }}">⨀</a>
+  &middot;
     {% if row.human_verified %}
     Human Verified &middot;
     {% endif %}
@@ -18,7 +21,7 @@
     {#  
     <!-- {% elif row.goodid == 0 %}
     This is a bad dupset, these are actually individual ID_NUMs and should be human verified, n
-    ot processed hear --> #}
+    ot processed here --> #}
     {% else %}
     GoodID unknown, or unmatched set &middot;
     {% endif %}
@@ -26,7 +29,10 @@
     From {{ row.db }}..{{ row.origtablewithdup }}
   {% endif %}
   
-  <p>{{ row.id_num }} {{ row.LastFirst }}</p>
+  <p>{{ row.id_num }} {{ row.LastFirst }}
+    {% if row.birth_name is not none  %} &middot; Birth_Name={{ row.birth_name }}{% endif %}
+    {% if row.preferred_name is not none %} &middot; Preferred_Name={{ row.preferred_name }}{% endif %}
+  </p>
 
 {% endfor %}
 

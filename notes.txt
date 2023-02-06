@@ -43,8 +43,8 @@ cd flasktest
 py -m venv py_venv
 py_env\Scripts\activate
 pip install ..\flaskr-1.0.0-py3-none-any.whl
-set FLASK_APP=flaskr rem
-set FLASK_DEBUG=1 rem reloads on any file changes
+set FLASK_APP=flaskr && rem Windows
+set FLASK_DEBUG=1 && rem reloads on any file changes
 export FLASK_APP=flaskr # linux
 export FLASK_DEBUG=1
 flask init-db
@@ -54,6 +54,7 @@ python -c "import os; print(os.urandom(16))" >> "C:\Program Files\Python38\var\f
 vi  "C:\Program Files\Python38\var\flaskr-instance\config.py"
 -- add SECRET_KEY =  to front, or better yet, in mypysecrets.py
 flask run (for :5000 testing and debugging)
+flask run --host=0.0.0.0 (to add remote access, still on :5000)
 pip install waitress
 waitress-serve --call "flaskr:create_app"
 

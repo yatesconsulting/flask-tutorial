@@ -5,7 +5,8 @@ from werkzeug.exceptions import abort
 
 from flaskr.auth import login_required
 from flaskr.db import get_db
-# from flask.helpers import read_image, make_response
+# Comment out flask.helpers on windows environment, sorry
+# # from flask.helpers import read_image, make_response
 from openpyxl import Workbook, load_workbook
 from openpyxl.writer.excel import save_virtual_workbook
 from openpyxl.styles import PatternFill, Border, Side, Alignment, Protection, Font

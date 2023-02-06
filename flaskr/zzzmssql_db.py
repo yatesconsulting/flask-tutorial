@@ -6,6 +6,7 @@ import queue
 import traceback
 import sys
 sys.path.insert(0, '/var/www/flaskr')
+sys.path.insert(0, 'C:/Users/bryany/Desktop/GitHub/flask-tutorial')
 from myflaskrsecrets import dbserver, dbname, dbuid, dbpwd
 
 # from myflaskrsecrets import dbserver, dbname, dbuid, dbpwd
@@ -42,6 +43,7 @@ class MSSQL_DB_Conn():
         self.user =  dbuid
         self.password =  dbpwd
         if self.user == "Trusted_Connection":
+            # fails miserably here
             self.conn = _mssql.connect(server=self.server,
                                    database=db,
                                    Trusted_Connection='yes',

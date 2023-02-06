@@ -7,7 +7,9 @@ import queue
 import traceback
 import sys
 sys.path.insert(0, '/var/www/flaskr')
+sys.path.insert(0, 'C:/Users/bryany/Desktop/GitHub/flask-tutorial')
 from myflaskrsecrets import dbserver, dbname, dbuid, dbpwd
+import re # remove after testing
 
 # http://www.pymssql.org/en/stable/ref/_mssql.html
 
@@ -74,6 +76,7 @@ class MSSQL_DB_Conn():
         self.user =  dbuid
         self.password =  dbpwd
         self.columns = []
+        self.record_count = False # updated on execute_s with count
         # self.row_factory = self.dict_factory
         
         # linuxodbcdriver = 'FreeTDS'
@@ -113,7 +116,7 @@ class MSSQL_DB_Conn():
             self.spid = row[0]
 
         
-    def execute_i_u_d(self, sql, params=None):
+    def execute_i_u_d(self, sql, params=[]):
         """
         Run the passed sql command for the INSERT, UPDATE or DELETE.
 
@@ -138,19 +141,23 @@ class MSSQL_DB_Conn():
                                  daemon=True)
 
             sql_performance_monitor_thread.start()
-            self.cursor.execute(sql, params)
+            self.cursor.execute(sql, params) 
+            # linux?
+            # self.cursor.execute(sql, []) # Windows
             self.conn.commit()
             sql_completion_queue.put("query complete")
+            self.record_count = False
 
-            return True # "Done"
+            return {'error':False} # "Done"
 
         except Exception as e:
             sql_completion_queue.put("query complete")
             ### self.log.exception(f"Exception occurred while executing SQL: "
             ###                    f"{sql}. Params: {params}")
-            return False  # e
+            return {'error':e}  # False
+        return {'error':'Confused'} # should never reach this one
 
-    def execute_s(self, sql, params=None, col_headers=True):
+    def execute_s(self, sql, params=[], col_headers=True):
         """
         Execute SELECT based statement, including stored procedure.
 
@@ -189,13 +196,14 @@ class MSSQL_DB_Conn():
                 results.append(dict(zip(self.columns, row)))
                 count += 1
             self.record_count = count
+            # print('maybe the count is {}'.format(count))
             return results
 
-        except Exception:
+        except Exception as ex:
             sql_completion_queue.put("query complete")
             ### self.log.exception(f"Exception occurred while executing SQL: "
             ###                    f"{sql}. Params: {params}")
-            return 1
+            return False # {'error':ex} # maybe expand this way, somehow, but SELECT pretty safe
 
     def __sql_performance_monitor(self, sql_completion_queue, sql, params,
                                   stack_text):
@@ -245,32 +253,10 @@ class MSSQL_DB_Conn():
         block_rows = monitoring_connection.execute_s(block_sql, self.spid)
         ### self.log.warning(f"Block report: {block_rows}")
 
-    def row_count(self):
-        """
-        Number of rows affected by last query.
-        For SELECT statements this value is only meaningful after reading all
-        rows.
-
-        Args:
-            None
-
-        Returns:
-            res (int) Returns number of rows affected by query
-        """
-
-        try:
-
-            return self.cursor.rows_affected
-
-        except Exception as e:
-            print(e)
-            return 1
-
     def test_results(self):
         """
-        If invoked, returns a test row with known internal data.
-        In this case, we return the current year, term and offset
-
+        If invoked, returns a test set of rows with basic data.
+        
         Args:
             None
 
@@ -282,11 +268,11 @@ class MSSQL_DB_Conn():
         # FROM Institute..semesterinfo
         # WHERE offset = 0"""
         sql = "select top 1 description from web..vw_web_FA_base"
-        sql = "select top 1 name,type from web.sys.tables"
+        sql = "select top 10 name,type from sys.tables"
 
         try:
-            r = self.cursor.execute(sql)
-            return r
+            return self.execute_s(sql)
+            # return r
             # return "blue<>{}".format(r)
             # return r.__dict__
 
@@ -294,8 +280,8 @@ class MSSQL_DB_Conn():
             print(e)
             # return ("EXCEPTION:{}".format(e))
 
-        finally:
-            self.cursor.close()
+        # finally:
+            # self.cursor.close()
 
 
 ###########################
@@ -303,10 +289,49 @@ class MSSQL_DB_Conn():
 if __name__ == '__main__':
     
     hey = MSSQL_DB_Conn()
-    print(hey.user)
+    # print(hey.user)
     print(hey.spid)
-    print(hey.conn)
-    sql = "select top 10 name,type from sys.tables"
-    r = hey.execute_s(sql)
-    for rr in r:
-        print(rr)
+    # print(hey.conn)
+    # for a in hey.test_results():
+    #     print("A:{}".format(a))
+    sql = 'select 10/0 as tur'
+    sql = 'select 10/0 as tur'
+    r = hey.execute_i_u_d(sql)
+    print ("r={}".format(r))
+    if 'error' in r and r['error']:
+        patternref = re.compile('REFERENCE constraint[^"]*"([^"]*)".*table[^"]*"([^"]*)"')
+        patterndupinsert = re.compile("Cannot insert duplicate key row[^']*'([^']*)'.*index[^']*'([^']*)'")
+        patternconflict = re.compile('UPDATE statement conflicted with the FOREIGN KEY constraint "([^"]*)".*table "([^"]*)') 
+        patternpkviolation = re.compile("Violation of PRIMARY KEY constraint '([^']*)'.*object '([^']*)'.*value is ([^)]*)")
+        # only put this in the except part
+        e = r['error'].args[1]
+        ans = patternref.findall(e)
+        if ans:
+            for a in ans:
+                print("patternref:{}".format(a))
+        else:
+            print("no patternref")
+        ans = patterndupinsert.findall(e)
+        if ans:
+            for a in ans:
+                print("patterndupinsert:{}".format(a))
+        else:
+            print("no patterndupinsert")
+
+        ans = patternconflict.findall(e)
+        if ans:
+            for a in ans:
+                print("patternconflict:{}".format(a))
+        else:
+            print("no patternconflict")
+
+        ans = patternpkviolation.findall(e)
+        if ans:
+            for a in ans:
+                print("patternpkviolation:{}".format(a))
+        else:
+            print("no patternpkviolation")
+            
+        
+
+
