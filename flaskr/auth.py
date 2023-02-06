@@ -6,7 +6,7 @@ from flask import (
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from flaskr.risd_auth import ADAuthenticated
-from myflaskrsecrets import ldapdomain
+# from myflaskrsecrets import ldapdomain
 import re
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
@@ -24,10 +24,7 @@ def login():
             error = 'No password.'
         else:
             user = ADAuthenticated(username=username, password=password)
-            if user.is_authentic():
-                # error = "user auth worked for {}".format(user.username)
-                pass
-            else:
+            if not user.authenticated:
                 error = 'Failed Auth'
 
             if error is None:
@@ -37,11 +34,13 @@ def login():
                     username = username.split('\\')[-1]
                 elif re.search("@", username):
                     username = username.split('@')[0]
-                session['username'] = username # stored in cookie?  prob need to update to something else, maybe
+                session['gdetails']={'useraneme':username,
+                    'groups':user.groups,
+                    'firstname':user.firstname,
+                    'lastname':user.lastname }
+                session['username'] = username
                 return redirect(url_for('index'))
-
             flash(error)
-
     return render_template('auth/login.html')
 
 @bp.before_app_request
@@ -51,7 +50,9 @@ def load_logged_in_user():
     if username is None:
         g.user = None
     else:
-        g.user = {'username':username}
+        g.user = username
+        g.details = session.get('gdetails')
+        #  {'username':username, 'groups':groups}
 
 @bp.route('/logout')
 def logout():

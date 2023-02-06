@@ -1,6 +1,10 @@
 Flask tutorial
 https://flask.palletsprojects.com/en/2.0.x/tutorial/index.html
 
+-- this file needs a ton of cleanup
+-- it started as my notes from this Flask tutorial, which 
+-- are not especially helpful to anyone else
+
 pip install flask
 
 pip install pytest coverage
@@ -55,3 +59,8 @@ waitress-serve --call "flaskr:create_app"
 
 -- pyodbc connection strings available in python: pyodbc.drivers()
 -- ['OracleODBC', 'ODBC Driver 17 for SQL Server']
+
+./venv.sh
+export PYTHONPATH="${PYTHONPATH}:/var/www/flaskr/"
+python flaskr/inventory.py
+

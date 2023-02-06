@@ -1,12 +1,11 @@
 from flask import (
-    Blueprint, flash, g, redirect, render_template, request, url_for, send_file
-    
+    Blueprint, flash, g, redirect, render_template, request, url_for, send_file, session
 )
 from werkzeug.exceptions import abort
 
 from flaskr.auth import login_required
 from flaskr.db import get_db
-from flask.helpers import read_image, make_response
+# from flask.helpers import read_image, make_response
 from openpyxl import Workbook, load_workbook
 from openpyxl.writer.excel import save_virtual_workbook
 from openpyxl.styles import PatternFill, Border, Side, Alignment, Protection, Font
@@ -27,6 +26,7 @@ def index():
     return render_template('inventory/index.html')
 
 def _formfromdb(db, sql, params=()):
+    # return [sql, params]
     try:
         ans = []
         if params:
@@ -110,14 +110,16 @@ def _getheaderinfo(db, delformid):
     if not delformid:
         return []
     try:
-        sql = "select *,(select count(distinct tag) from invdelformdetails where invid=F.id) as tagcount from invdelform F where id = ?;"
+        # sql = "select *,(select count(distinct tag) from invdelformdetails where invid=F.id) as tagcount from invdelform F where id = ?;"
+        sql = "select *,(select count(distinct tag) from t where invid=F.id) as tagcount from invdelform F where id = ?;"
         ans = _formfromdb(db, sql, tuple(delformid))
         return ans
     except Exception as e:
         return ['_getheaderinfo failed', e, sql]
 
 def _getdetails(db, sheetid):
-    ans = _formfromdb(db, 'select * from invdelformdetails where invid = ?;',tuple(sheetid))
+    # ans = _formfromdb(db, 'select * from invdelformdetails where invid = ?;',tuple(sheetid))
+    ans = _formfromdb(db, 'select * from t where invid = ?;',tuple(sheetid))
   # , dateitcleared, updated
     # id, invid, tag, description , delcode, itinitials
     return ans
@@ -144,10 +146,19 @@ def deletions():
 
     dbv = dbsource.MSSQL_DB_Conn() # visions info
     dbf = get_db() # forms
-    username = g.user['username'][:2].upper()
-    initials = username.upper()
+    username = g.user.upper()
+    # username = g.user['username'][:2].upper()
 
-    # return render_template('inventory/index.html',rows= ['blah',request.values])
+    today = ""
+    itinitials = ""
+    myinitials = username.upper()[:2]
+    ittodaysdate = ""
+    if 'itdepartment' in g.details['groups']:
+        today = datetime.now().strftime("%x")
+        itinitials = myinitials # prob unused, TODO fix
+        ittodaysdate = today
+    # g.groups ok, g.user ok
+    # return render_template('inventory/index.html',rows= ['156b', g.user, g.details, initials]) #, g, session['firstname']])
     # return render_template('inventory/index.html',rows= ['blah',request.args])
     # return render_template('inventory/index.html',rows= ['blah',request.stream])
 
@@ -196,6 +207,8 @@ def deletions():
         rec['description'] = request.form.get("newdescription")
         rec['delcode'] = request.form.get("newdelcode")
         rec['itinitials'] =  request.form.get("newitinitials")
+        x = datetime.datetime.now()
+        rec['dateitcleared'] = x.strftime("%x")
         ans = _insertdetailrecord(dbf, rec)
         if ans != True:
             flash("Error inserting detail record {}".format(ans))
@@ -266,8 +279,9 @@ def deletions():
                 # add it to the form
                 d['invid'] = id
                 d['delcode'] = 'o' # default a better way?
-                d['itinitials'] = initials # default a better way--kisok mode TODO
+                d['itinitials'] = itinitials # default a better way--kisok mode TODO
                 # values = dict of all values for 1 row to insert into DB
+                d['dateitcleared'] = today
                 _insertdetailrecord(dbf, d)
                 added.append(d)
             else:
@@ -279,7 +293,7 @@ def deletions():
             rows.append('These were skipped, as they are already in this Del form {}'.format(id))
             rows.append(alreadyadded)
         if added:
-            flash("{} new scanned IDs added to form {}".format(len(added), id))
+            flash("{} new lines added to form {}".format(len(added), id))
         if alreadyadded:
             flash("{} Duplicate scans ignored".format(len(alreadyadded)))
 
@@ -360,7 +374,7 @@ def deletions():
             form.append('<label for="notes">Personal notes:</label><input type="text" id="notes" name="notes" ><br />')
             form.append('<label for="sdel">School Unit Deleteing Items:</label> <input type="text" id="sdel" name="sdel" value=""><br />')
             form.append('<label for="wo">Work Order Num:</label> <input type="text" id="wo" name="wo"><br />')
-            form.append('<label for="creator">* Username of form owner:</label> <input type="text" id="creator" name="creator" value="{}" required><br />'.format(g.user['username']))
+            form.append('<label for="creator">* Username of form owner:</label> <input type="text" id="creator" name="creator" value="{}" required><br />'.format(g.user))
             form.append('<input type="submit" name="submit" id="submit" value="Create & Start Scanning">')
 
         return render_template('inventory/index.html', form=form, formtitle=formtitle, pgtitle="Deletions")
@@ -477,21 +491,25 @@ def deletions():
         # i = headerinfo['id']
         myform = '<div style="border-radius: 10px; border:2px solid black; background: #cce7ff; padding:10px;">Form ID: {}<br />'.format(id)
 
-        v = headerinfo['notes']
-        v = "" if v == None else v
-        # return render_template('inventory/index.html',rows = ['472', v, id, headerinfo, headerinfo['notes'], headerinfo['notes'] == None, 'blah' if headerinfo['notes'] else 'oof'])
+        # v = headerinfo['notes']
+        # v = "" if v == None else v
+        v = "" if not 'notes' in headerinfo else headerinfo['notes']
+        return render_template('inventory/index.html',rows = ['498', v, 'blue', id, 'org', headerinfo, g.details['groups'] ])
         myform += '\n<label for="notes">Personal notes </label><input type="text" id="notes" name="notes" value="{}" ><br />'.format(v)
 
-        v = headerinfo['schooldeleting']
-        v = "" if v == None else v
+        # v = headerinfo['schooldeleting']
+        # v = "" if v == None else v
+        v = "" if not 'schooldeleting' in headerinfo else headerinfo['schooldeleting']
         myform += '\n<label for="sdel">School Unit Deleteing Items: </label><input type="text" id="sdel" name="sdel" value="{}"><br />'.format( v)
 
-        v = headerinfo['workorder']
-        v = "" if v == None else v
+        # v = headerinfo['workorder']
+        # v = "" if v == None else v
+        v = "" if not 'workorder' in headerinfo else headerinfo['workorder']
         myform += '\n<label for="wo">Work Order Num: </label><input type="text" id="wo" name="wo" value="{}"><br />'.format(v)
 
-        v = headerinfo['username']
-        v = "" if v == None else v
+        # v = headerinfo['username']
+        # v = "" if v == None else v
+        v = "" if not 'username' in headerinfo else headerinfo['username']
         myform += '\n<label for="creator">Owner username: </label><input type="text" id="creator" name="creator" value="{}" required><br />'.format(v)
 
         myform += '\n<input type="submit" name="submit" value="Update header {}"><br />'.format(id)
@@ -501,7 +519,7 @@ def deletions():
 
         fulldetails = _getdetails(dbf, id)
 
-        # return render_template('inventory/index.html',rows=[{'521fulldetails':fulldetails,'v':v, 'id':id}])
+        # return render_template('inventory/index.html',rows=[{'510 fulldetails':fulldetails,'v':v, 'id':id}])
         tags =  sorted(list(set([t['tag'] for t in fulldetails])))
         
 
@@ -516,14 +534,14 @@ def deletions():
             # gather tag description(s) into mylist and work with each of those as clump
             mylist = [item for item in fulldetails if item["tag"] == tag]
             # return render_template('inventory/index.html',rows = ['blue', tag, mylist, fulldetails])
-
+            formdisabled  = ""
             for row in mylist:
                 if myform[-7] != '10px;">':
                     myform += "<br />"
                 myform += 'Row {}\n<input type="text" value="{}" name="tag{}" size="6">'.format(row['id'], row['tag'], row['id'])
                 myform += '\n<input type="text" value="{}" name="description{}" >'.format(row['description'], row['id'])
                 myform += '\n<input type="text" value="{}" name="delcode{}" size="3">'.format(row['delcode'], row['id'])
-                myform += '\n<input type="text" value="{}" name="itinitials{}" size="3">'.format(row['itinitials'], row['id'])
+                myform += '\n<input type="text" value="{}" name="itinitials{}" size="3" {}>'.format(row['itinitials'], row['id'], formdisabled)
                 myform += '\n<input type="text" value="{}" name="dateitcleared{}" size="15">'.format(row['dateitcleared'], row['id'])
                 myform += '\n<input type="submit" name="submit" value="Update detail {}">'.format(row['id'])
                 myform += '\n<input type="submit" name="submit" style="color:red;" value="Delete Detail {}">'.format(row['id'])
@@ -534,7 +552,7 @@ def deletions():
         form.append('Add a New Row <input type="text" value="" name="newtag" size="6">')
         form.append('<input type="text" value="" name="newdescription">')
         form.append('<input type="text" value="O" name="newdelcode" size="3">')
-        form.append('<input type="text" value="{}" name="newitinitials" size="3">'.format(initials))
+        form.append('<input type="text" value="{}" name="newitinitials" size="3">'.format(itinitials))
         form.append('<input type="text" value="{}" name="newdateitcleared" size="15">'.format(datetime.today().strftime('%m-%d-%Y')))
         form.append('<input type="submit" name="submit" value="Add New Detail line to Form {}">\n</div><br />\n'.format(id))
        
@@ -664,12 +682,11 @@ def etest():
     return render_template('inventory/index.html',rows = tstlst)
     # return render_template('inventory/index.html',rows = dvals)
     
-
     return send_file(
-                    io.BytesIO(save_virtual_workbook(wb)),
-                    attachment_filename='Deletes.xlsx',
-                    mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-            )
+        io.BytesIO(save_virtual_workbook(wb)),
+        attachment_filename='Deletes.xlsx',
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
 
     # return render_template('inventory/index.html',rows=lookedup )
 
@@ -688,3 +705,8 @@ def get_image(pid):
         mimetype='image/jpeg',
         as_attachment=True,
         attachment_filename='%s.jpg' % pid)
+
+###########################
+#the below is a manual test.
+if __name__ == '__main__':
+    print("ok")

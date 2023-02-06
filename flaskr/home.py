@@ -11,7 +11,16 @@ from flaskr.db import get_db
 bp = Blueprint('home', __name__, url_prefix='/')
 
 @bp.route('/')
+@login_required
 def index():
     """Show a menu, with the secrets hidden until logged in."""
-    links = ['Blog','Inventory','Duplicate_Cleanup']
+    links = []
+    if (g.user):
+        links.append('Chromebooks')
+        if (g.user == 'byates'):
+            links.append('Blog')
+            links.append('Duplicate_Cleanup')
+            links.append('Inventory')
+            links.append('Employee_Calendars')
+
     return render_template('home/index.html', links=links)

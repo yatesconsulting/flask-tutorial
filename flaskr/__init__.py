@@ -69,6 +69,15 @@ def create_app(test_config=None):
     from . import duplicate_cleanup
     app.register_blueprint(duplicate_cleanup.bp)
 
+    from . import logos
+    app.register_blueprint(logos.bp)
+
+    from . import employee_calendars
+    app.register_blueprint(employee_calendars.bp)
+
+    from . import chromebooks
+    app.register_blueprint(chromebooks.bp)
+
     from . import home
     app.register_blueprint(home.bp)
     app.add_url_rule('/', endpoint='index') # needed?
