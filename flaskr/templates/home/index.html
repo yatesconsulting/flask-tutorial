@@ -5,9 +5,17 @@
 {% endblock %}
 
 {% block content %}
-<ul>
-  {% for link in links %}
-    <li><a class="action" href="{{ url_for("{}.index".format(link|lower)) }}">{{ link }}</a></li>
-  {% endfor %}
-</ul>
+
+{% if g.user %}
+      
+  <ul>
+    {% for link in links %}
+      <li><a class="action" href="{{ url_for("{}.index".format(link|lower)) }}">{{ link }}</a></li>
+    {% endfor %}
+  </ul>
+{% else %}
+
+  Please login to continue
+{% endif %}
+
 {% endblock %}

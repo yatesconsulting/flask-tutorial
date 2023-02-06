@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h2><a href="{{ url_for('.index') }}">Active Chromebooks</a></h2>
+  <style>
+    @media print {
+        .dataTables_wrapper  {
+            page-break-after: always;
+        }
+        .dataTables_wrapper:last-child {
+            page-break-after: auto;
+        }
+        .noprint {
+            display: none !important;
+        }
+    }
+</style>
+
+<!-- 
+
+  
+
+-->
+
+<link rel="stylesheet" type="text/css" href="/py/jquery.dataTables.css">
+<script src="/py/jquery-3.1.1.min.js"></script>
+<script type="text/javascript" charset="utf8" src="/py/jquery.dataTables.js"></script>
+<script type="text/javascript" class="init">
+function filterGlobal() {
+  $('table.display').DataTable().search(
+    $('#global_filter').val()
+  ).draw();
+}
+ 
+$(document).ready( function () {
+    $('table.display').DataTable( {
+    "paging": false,
+    "searching": true,
+    "ordering": true,
+    "processing": false,
+    "infoEmpty": false,
+//    "order": [0], // seems to be the default
+    "dom": 'lrtp' // removes search boxes, and summary 
+    });
+
+// https://datatables.net/reference/option/dom
+// dom: 'lrtip'
+//    l - length changing input control
+//    f - filtering input
+//    t - The table!
+//    i - Table information summary
+//    p - pagination control
+///    r - processing display element
+
+    $('input.global_filter').on('keyup click', function () {
+    filterGlobal();
+    });
+
+} ); 
+</script>
+
+{% endblock %}
+
+{% block content %}
+
+<!--  top part with selections here -->
+
+{% if schools %}
+<form id="school">Choose one or more Schools<br />
+  <select name="s" form="school" size="10" multiple="multiple">
+    {% for school in schools %} 
+      <option value="{{ school.initials }}" {{ school.selected }}>{{ school.initials }}</option>
+    {% endfor %}
+  </select><br /><br /><input type="submit" value="Search by school(s)"></form>
+{% endif %}
+
+{% if ousNOT %}
+<form id="ou">Choose one or more OUs<br />
+  <select name="ou" form="ou" size="20" multiple="multiple">
+    {% for ou in ous %} 
+      <option value="{{ ou.index }}" {{ ou.selected }}>{{ ou.fullname }}</option>
+    {% endfor %}
+  </select><br /><br /><input type="submit" value="Search by OU(s)"></form>
+{% endif %}
+
+{% if cbooks %}
+<pre>
+{{ cbookheaders }}
+</pre>
+<hr />
+<p align="right">Global search:
+<input type="text" class="global_filter" id="global_filter"></p></div>
+<table>
+
+  <tr>
+  {% for h in cbookheaders %} 
+    <th>{{ h }}</th>
+  {% endfor %}
+  </tr>
+
+
+
+<!--
+  for row in cbooks 
+  if loop.changed(row.orgUnitPath) 
+-->
+
+  
+  {% for row in cbooks %} 
+
+
+  <tr>
+    {% for h in cbookheaders %} 
+      <td>{{ row[h] }}</td>
+    {% endfor %}
+  </tr>
+
+  <tr>
+      {% for cell in row %}
+        <td>{{ cell.value }}</td>
+      {% endfor %}
+    </tr>
+  {% endfor %}
+
+</table>
+
+<br>
+
+  {% for cell in row %}
+    Cellname: {{ cell.name }} |||
+    Cellval: {{ cell.value }} |||
+  {% endfor %}
+<br>
+{% endfor %}
+
+
+{% endif %}
+
+
+{% endblock %}

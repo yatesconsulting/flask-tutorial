@@ -1,0 +1,4 @@
+Event,Start Date,End Date,Is All Day,Start Time,End Time,Location,Category,Description,Price,Currency,Contact,Event Registration,Member Participants,Nonmember Participants,Payment Provider
+{%- for d in events %}
+"{{ d[1] }}",{{ d[0] }},{{ d[0] }},TRUE,,,,,,,,,,,,
+{%- endfor %}

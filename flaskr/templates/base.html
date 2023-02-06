@@ -10,11 +10,14 @@
   <h1><a href="{{ url_for('index') }}">Intranet</a></h1>
   <ul>
     {% if g.user %}
-      <li><span>{{ g.user['username'] }}</span>
-      <li><a href="{{ url_for('auth.logout') }}">Log Out</a>
+      <li><span>{{ g.user }}</span></li>
+      <li><a href="{{ url_for('auth.logout') }}">Log Out</a></li>
     {% else %}
-      <li><a href="{{ url_for('auth.login') }}">Log In</a>
+    <li><span>Guest</span></li>
+      <li><a href="{{ url_for('auth.login') }}">Log In</a></li>
+      <!--  $_SERVER['REMOTE_HOST']	or $_SERVER['REMOTE_ADDR'] request.environ['RAW_URI'] -->
     {% endif %}
+    <li><span>{{ request.remote_addr  }}</span></li>
   </ul>
 </nav>
 <section class="content">

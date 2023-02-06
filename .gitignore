@@ -116,3 +116,10 @@ dmypy.json
 *Unused*
 secrets.py
 myflaskrsecrets.py
+Pipfile.lock
+.open
+flaskr/pyodbc_db_assessment.py
+flaskr/pyodbc_db.py
+flaskr/pyodbc_db.py
+flaskr/risd_auth.py
+flaskr/models/access-test.txt

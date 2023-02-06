@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h2><a href="{{ url_for('.index') }}">Employee Calendar</a></h2>
+{% endblock %}
+
+{% block content %}
+
+{% if menu %}
+
+<h2>Please choose</h2>
+<ul>
+{% for row in menu %} 
+  <li>{{ row.words }}
+     {% for a in outputs %}
+     <!-- bold the one that matches the user from the SQL I saved in the empcalendar stuff -->
+       <a href="{{ url_for('employee_calendars.cal', calname = row.link, output=a) }}">{{ a }}</a> 
+    {% endfor %}
+  </li>
+  {% endfor %}
+</ul>  
+
+{% endif %}
+
+
+
+{% if cal %}
+
+{% for row in cal %} 
+hey
+  {{ row }}
+{% endfor %}
+{% endif %}
+
+
+
+
+
+{% endblock %}

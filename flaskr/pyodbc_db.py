@@ -179,7 +179,7 @@ class MSSQL_DB_Conn():
                                  daemon=True)
 
             sql_performance_monitor_thread.start()
-            self.cursor.execute(sql, params)
+            self.cursor.execute(sql) # , params) breaks windows?
             sql_completion_queue.put("query complete")
 
             self.columns = [column[0] for column in self.cursor.description]

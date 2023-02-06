@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h2><a href="{{ url_for('.index') }}">Employee Calendar</a></h2>
+{% endblock %}
+
+{% block content %}
+
+<style>
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+  }
+  
+  table {
+    border-collapse: collapse;
+    padding-right: 10px;
+    padding-bottom: 10px;
+  }
+
+  .top {
+    border-left: 1pt solid black;
+    border-right: 1pt solid black;
+    border-top: 1pt solid black;
+    text-align: right;
+    font-size: x-small;
+    font-weight: bold;
+  }
+  .bottom {
+    border-left: 1pt solid black;
+    border-right: 1pt solid black;
+    border-bottom: 1pt solid black;
+    text-align: center;
+    font-weight: bold;
+  }
+  .grn {
+    background-color: green;
+  }
+  .red {
+    background-color: red;
+    background: linear-gradient(to right, red 0%, rgba(255, 0, 0, 0.219));
+  } 
+ 
+  td span {
+    display:none;
+  }
+  
+  td:hover span { /*the span will display just on :hover state*/
+    display:block;
+    position:relative;
+    border:2px solid rgb(114, 73, 12);
+    background-color:rgb(245, 188, 104);
+    color:#000;
+    text-align: center;
+    padding:5px;
+    font-size: medium;
+  }
+
+</style>
+
+
+{% if cal %}
+<table width="100%" cellpadding ="0" cellspacing="0">
+  <tr>
+    <td width="30%" style="text-align: center; background-color: rgb(255,192,0); font-size: large; font-weight: bold;">{{ cal.schoolyear }}</td>
+    <td width="40%" style="text-align: center; background-color: rgb(255,192,0); font-size: large;">School Year</td>
+    <td width="30%" style="text-align: center; background-color: rgb(255,192,0);">{{ cal.workdays }} Days</td>
+  </tr>
+  <tr>
+      <td colspan="3" style="text-align: center; background-color: rgb(255,192,0); font-size: large;">{{ cal.title }}</td>
+  </tr>
+</table>
+
+<p>
+
+<!-- style="column-count: 3; -->
+<!-- column-gap: 10px; -->
+
+{% for calmonth in cal.calweeks %}
+
+<table cellpadding ="1" cellspacing="0" style="display:inline;">
+  <tr><td colspan="5" style="font-style: italic; text-align: center; font-weight: bold;">{{ cal.calmonthnames[loop.index0]|upper }}</td></tr>
+  <tr>
+    <td style="text-align: center" width="50"><b>M</b></td>
+    <td style="text-align: center" width="50"><b>T</b></td>
+    <td style="text-align: center" width="50"><b>W</b></td>
+    <td style="text-align: center" width="50"><b>T</b></td>
+    <td style="text-align: center" width="50"><b>F</b></td>
+  </tr>
+    {% for wk in calmonth %}
+  <tr>
+        {% for d in wk %}
+    <td class="top {{d.style}}">{{ d.dom if d.dom is not none and d.dom > 0 else "&nbsp;"|safe }}
+      {% if d.holiday is not none and d.holiday > '' %}<span>{{ d.holiday }}</span>{% endif %}
+    </td>
+        {% endfor %}
+  </tr>
+  <tr>
+    {% for d in wk %}
+<td class="bottom {{d.style}}">{{ d.wcount if d.wcount is not none and d.wcount > 0 else '&nbsp;'|safe}}
+  {% if d.holiday is not none and d.holiday > '' %}<span>{{ d.holiday }}</span>{% endif %}
+</td>
+    {% endfor %}
+</tr>
+{% endfor %}
+  <!-- td class="bottom"> 
+    row[8] if row[8] > 0 else '' 
+  </td -->
+
+</table>
+
+{% endfor %}
+</p>
+
+<table cellpadding ="5" cellspacing="0" width="100%" border="0">
+  <tr>
+    <td width="20">&nbsp;</td>
+    <td width="20px" height="20px" class="grn" style="border: 2px solid black;">&nbsp;</td>
+    <td> = Holiday</td>
+    <td>&nbsp;</td>
+    <td width="20px" height="20px" class="red" style="border: 2px solid black;"">&nbsp;</td>
+    <td> = Start/End of Contract</td>
+    <td width="20">&nbsp;</td>
+  </tr>
+</table>
+
+{% endif %}
+
+
+{% endblock %}
